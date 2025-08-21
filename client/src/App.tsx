@@ -21,6 +21,7 @@ function Router() {
       {isLoading || !isAuthenticated ? (
         <>
           <Route path="/" component={Landing} />
+          <Route path="/register" component={Register} />
           <Route path="/product/:slug" component={Product} />
           <Route path="/checkout/:podcastId" component={Checkout} />
         </>
