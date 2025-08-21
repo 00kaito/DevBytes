@@ -38,7 +38,7 @@ export default function Landing() {
   const { loginMutation } = useAuth();
   
   const handleLoginClick = () => {
-    window.location.href = "/register";
+    window.location.href = "/login";
   };
 
   const handleBuyPodcast = (podcastId: string) => {
