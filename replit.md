@@ -13,6 +13,7 @@ README updates: User requested comprehensive README.md documentation (August 21,
 Security fix: User reported critical admin authorization vulnerability - fixed with role-based access (August 21, 2025)
 Admin promotion: User ID "40837186" (sham.bednarz@gmail.com) promoted to administrator status (August 21, 2025)
 Security fix: Removed insecure manual registration endpoint - using only secure Replit Auth (August 21, 2025)
+Code cleanup: Removed unused replitAuth.ts and related dependencies (passport, openid-client) - using session-based auth (August 21, 2025)
 
 # System Architecture
 

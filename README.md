@@ -97,10 +97,9 @@ Aplikacja będzie dostępna na `http://localhost:5000`
 │   ├── hooks/         # Custom React hooks
 │   └── lib/           # Utilities i konfiguracja
 ├── server/
-│   ├── routes.ts      # API endpoints
+│   ├── routes.ts      # API endpoints i middleware autentykacji
 │   ├── storage.ts     # Warstwa dostępu do danych
-│   ├── db.ts         # Konfiguracja Drizzle ORM
-│   └── replitAuth.ts  # Konfiguracja autentykacji
+│   └── db.ts         # Konfiguracja Drizzle ORM
 ├── shared/
 │   └── schema.ts      # Wspólne typy i schematy Zod
 └── README.md
