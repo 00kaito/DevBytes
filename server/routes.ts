@@ -67,7 +67,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const PostgresSessionStore = connectPg(session);
   const sessionStore = new PostgresSessionStore({
     conString: process.env.DATABASE_URL,
-    createTableIfMissing: true,
+    createTableIfMissing: false, // Don't try to create table, it already exists
   });
 
   app.set("trust proxy", 1);
@@ -124,6 +124,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.status(500).json({ message: "Błąd podczas rejestracji" });
     }
+  });
+
+  // Logout endpoint
+  app.post('/api/logout', (req: any, res) => {
+    req.session.destroy((err: any) => {
+      if (err) {
+        console.error("Logout error:", err);
+        return res.status(500).json({ message: "Błąd podczas wylogowania" });
+      }
+      res.clearCookie('connect.sid');
+      res.json({ message: "Wylogowano pomyślnie" });
+    });
   });
 
   // Login endpoint
