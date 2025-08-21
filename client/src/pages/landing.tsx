@@ -111,7 +111,7 @@ export default function Landing() {
             <div className="flex items-center space-x-4">
               {!isAuthenticated && (
                 <div className="flex space-x-2">
-                  <Button variant="ghost" onClick={handleLogin} className="text-blue-600 hover:text-blue-700">
+                  <Button variant="ghost" onClick={handleLoginClick} className="text-blue-600 hover:text-blue-700">
                     Zaloguj się
                   </Button>
                   <Link href="/register">
