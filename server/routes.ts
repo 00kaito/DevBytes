@@ -35,30 +35,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Registration route (simple version - in production use proper auth)
-  app.post('/api/register', async (req, res) => {
-    try {
-      const { email, firstName, lastName, password } = req.body;
-      
-      // Check if user already exists
-      const existingUser = await storage.getUserByEmail(email);
-      if (existingUser) {
-        return res.status(400).json({ message: "User already exists" });
-      }
-
-      // In a real app, you'd hash the password here
-      const user = await storage.createUser({
-        email,
-        firstName,
-        lastName,
-        // Note: This is a simplified registration - in production use proper password hashing
-      });
-
-      res.json({ message: "User created successfully", userId: user.id });
-    } catch (error) {
-      console.error("Error creating user:", error);
-      res.status(500).json({ message: "Failed to create user" });
-    }
-  });
+  // SECURITY: Registration endpoint removed - using secure Replit Auth (OpenID Connect)
+  // Users register through Replit's secure authentication system instead of manual registration
 
   // Categories routes
   app.get("/api/categories", async (req, res) => {
