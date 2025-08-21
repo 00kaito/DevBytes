@@ -9,6 +9,8 @@ import Landing from "@/pages/landing";
 import Home from "@/pages/home";
 import Library from "@/pages/library";
 import Checkout from "@/pages/checkout";
+import Admin from "@/pages/admin";
+import Register from "@/pages/register";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -18,12 +20,14 @@ function Router() {
       {isLoading || !isAuthenticated ? (
         <>
           <Route path="/" component={Landing} />
+          <Route path="/register" component={Register} />
           <Route path="/checkout/:podcastId" component={Checkout} />
         </>
       ) : (
         <>
           <Route path="/" component={Home} />
           <Route path="/library" component={Library} />
+          <Route path="/admin" component={Admin} />
           <Route path="/checkout/:podcastId" component={Checkout} />
         </>
       )}

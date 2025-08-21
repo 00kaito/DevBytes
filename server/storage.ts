@@ -20,6 +20,8 @@ import { eq, and, desc, asc } from "drizzle-orm";
 export interface IStorage {
   // User operations (required for Replit Auth)
   getUser(id: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
+  createUser(user: UpsertUser): Promise<User>;
   upsertUser(user: UpsertUser): Promise<User>;
   updateStripeCustomerId(userId: string, stripeCustomerId: string): Promise<User>;
 
@@ -32,7 +34,10 @@ export interface IStorage {
   getPodcastsByCategory(categoryId: string): Promise<Podcast[]>;
   getPodcastBySlug(slug: string): Promise<PodcastWithCategory | undefined>;
   getPodcast(id: string): Promise<PodcastWithCategory | undefined>;
+  getAllPodcasts(): Promise<Podcast[]>;
   createPodcast(podcast: InsertPodcast): Promise<Podcast>;
+  updatePodcast(id: string, podcast: Partial<InsertPodcast>): Promise<Podcast | undefined>;
+  deletePodcast(id: string): Promise<boolean>;
 
   // Purchase operations
   createPurchase(purchase: InsertPurchase): Promise<Purchase>;
@@ -126,12 +131,45 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
+  }
+
+  async createUser(userData: UpsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(userData)
+      .returning();
+    return user;
+  }
+
+  async getAllPodcasts(): Promise<Podcast[]> {
+    return await db.select().from(podcasts).orderBy(desc(podcasts.createdAt));
+  }
+
   async createPodcast(podcastData: InsertPodcast): Promise<Podcast> {
     const [podcast] = await db
       .insert(podcasts)
       .values(podcastData)
       .returning();
     return podcast;
+  }
+
+  async updatePodcast(id: string, podcastData: Partial<InsertPodcast>): Promise<Podcast | undefined> {
+    const [podcast] = await db
+      .update(podcasts)
+      .set({ ...podcastData, updatedAt: new Date() })
+      .where(eq(podcasts.id, id))
+      .returning();
+    return podcast;
+  }
+
+  async deletePodcast(id: string): Promise<boolean> {
+    const result = await db
+      .delete(podcasts)
+      .where(eq(podcasts.id, id));
+    return (result.rowCount || 0) > 0;
   }
 
   async createPurchase(purchaseData: InsertPurchase): Promise<Purchase> {

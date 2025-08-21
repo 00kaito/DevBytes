@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { Link } from "wouter";
-import { Headphones, BookOpen, ShoppingCart, LogOut } from "lucide-react";
+import { Headphones, BookOpen, ShoppingCart, LogOut, Settings } from "lucide-react";
 import type { Category, Podcast } from "@shared/schema";
 
 export default function Home() {
@@ -77,6 +77,12 @@ export default function Home() {
                     <Button variant="ghost" className="flex items-center text-slate-700 hover:text-blue-600">
                       <BookOpen className="mr-2 h-4 w-4" />
                       Moja Biblioteka
+                    </Button>
+                  </Link>
+                  <Link href="/admin">
+                    <Button variant="ghost" className="flex items-center text-slate-700 hover:text-blue-600">
+                      <Settings className="mr-2 h-4 w-4" />
+                      Admin
                     </Button>
                   </Link>
                   <div className="flex items-center space-x-2">

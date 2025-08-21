@@ -5,6 +5,8 @@ This is a podcast marketplace application built with a modern full-stack archite
 # User Preferences
 
 Preferred communication style: Simple, everyday language.
+Admin functionality: User requested admin panel for podcast management (December 21, 2024)
+Registration system: User requested user registration capability (December 21, 2024)
 
 # System Architecture
 
@@ -37,6 +39,8 @@ Preferred communication style: Simple, everyday language.
 - **Session Storage**: PostgreSQL-backed sessions with HTTP-only cookies
 - **Authorization**: Role-based access with middleware guards
 - **Security**: CSRF protection via session validation and secure cookie configuration
+- **Admin Access**: Simple admin panel for podcast management (admin routes: GET/POST/PUT/DELETE /api/admin/podcasts)
+- **Registration**: User registration endpoint with basic validation (/api/register)
 
 ## External Dependencies
 

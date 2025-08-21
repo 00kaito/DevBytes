@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/useAuth";
+import { Link } from "wouter";
 import { Headphones, Play, Users, Star, Car, Microscope, Bus, Check, ShoppingCart } from "lucide-react";
 import type { Category, Podcast } from "@shared/schema";
 
@@ -111,9 +112,11 @@ export default function Landing() {
                   <Button variant="ghost" onClick={handleLogin} className="text-blue-600 hover:text-blue-700">
                     Zaloguj się
                   </Button>
-                  <Button onClick={handleLogin} className="bg-blue-600 hover:bg-blue-700">
-                    Zarejestruj się
-                  </Button>
+                  <Link href="/register">
+                    <Button className="bg-blue-600 hover:bg-blue-700">
+                      Zarejestruj się
+                    </Button>
+                  </Link>
                 </div>
               )}
             </div>
