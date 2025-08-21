@@ -100,6 +100,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Individual podcast by ID (for checkout)
+  app.get("/api/podcasts/by-id/:id", async (req, res) => {
+    try {
+      const podcast = await storage.getPodcast(req.params.id);
+      if (!podcast) {
+        return res.status(404).json({ message: "Podcast not found" });
+      }
+      res.json(podcast);
+    } catch (error) {
+      console.error("Error fetching podcast:", error);
+      res.status(500).json({ message: "Failed to fetch podcast" });
+    }
+  });
+
   // Admin routes
   app.get("/api/admin/podcasts", isAuthenticated, async (req: any, res) => {
     try {

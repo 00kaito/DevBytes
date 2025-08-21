@@ -158,7 +158,7 @@ export default function Checkout() {
 
   // Fetch podcast details
   const { data: podcast, isLoading: podcastLoading, error: podcastError } = useQuery<PodcastWithCategory>({
-    queryKey: ["/api/podcasts", podcastId],
+    queryKey: ["/api/podcasts/by-id", podcastId],
     enabled: !!podcastId && isAuthenticated,
     retry: false,
   });
