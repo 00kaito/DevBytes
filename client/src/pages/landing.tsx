@@ -35,13 +35,15 @@ export default function Landing() {
     enabled: !!categories,
   });
 
-  const handleLogin = () => {
-    window.location.href = "/api/login";
+  const { loginMutation } = useAuth();
+  
+  const handleLoginClick = () => {
+    window.location.href = "/register";
   };
 
   const handleBuyPodcast = (podcastId: string) => {
     if (!isAuthenticated) {
-      handleLogin();
+      handleLoginClick();
       return;
     }
     window.location.href = `/checkout/${podcastId}`;
