@@ -9,6 +9,7 @@ Admin functionality: User requested admin panel for podcast management (December
 Registration system: User requested user registration capability (December 21, 2024)
 Individual product pages: User requested individual sales pages for each product with "Kup Teraz" buttons (December 21, 2024)
 Rich text editor: User requested TinyMCE or Markdown editor for product descriptions in admin panel (December 21, 2024)
+README updates: User requested comprehensive README.md documentation (August 21, 2025)
 
 # System Architecture
 

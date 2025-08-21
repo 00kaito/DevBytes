@@ -1,246 +1,185 @@
-# DevPodcasts - Polish Programming Podcast Marketplace
+# DevPodcasts - Marketplace Podcastów Programistycznych
 
-A modern full-stack marketplace for selling Polish programming audio podcasts, featuring individual sales pages, admin panel with rich text editing, and Stripe payment integration.
+Profesjonalna platforma do sprzedaży i zakupu podcastów programistycznych w języku polskim. Specjalizujemy się w treściach audio dla programistów, które można słuchać w drodze do pracy, podczas treningu lub w dowolnym miejscu.
 
-## 🚀 Features
+## 🎯 Dla Kogo
 
-- **Polish Language Interface** - Complete Polish UI for programming professionals
-- **Individual Product Pages** - Dedicated sales pages for each podcast with clickable cards
-- **Rich Text Editor** - TinyMCE integration for creating detailed product descriptions
-- **Payment Processing** - Stripe integration with PLN currency support
-- **User Authentication** - Secure login with Replit Auth (OpenID Connect)
-- **Admin Panel** - Complete CRUD operations for podcast management
-- **Categories** - Organized by Java, JavaScript, Azure, and Software Architecture
-- **User Library** - Personal collection of purchased podcasts
-- **Object Storage** - Cloud file storage for audio content
+- **Programiści Java** - podcasty o kolekcjach, garbage collection, Spring Framework
+- **Deweloperzy JavaScript** - materiały o asynchroniczności, React, Node.js
+- **Specjaliści Azure** - treści o chmurze Microsoft, DevOps, architekturze
+- **Architekci oprogramowania** - podcasty o wzorcach projektowych, mikrousługach
 
-## 🛠️ Tech Stack
+## ✨ Kluczowe Funkcjonalności
+
+### Dla Użytkowników
+- **Przeglądanie podcastów** według kategorii (Java, JavaScript, Azure, Architecture)
+- **Indywidualne strony produktów** z pełnymi opisami i przyciskami "Kup Teraz"
+- **Bezpieczne płatności** przez Stripe w złotówkach (PLN)
+- **Osobista biblioteka** zakupionych podcastów z linkami do pobrania
+- **Autentykacja** przez Replit Auth (OpenID Connect)
+
+### Dla Administratorów
+- **Panel administracyjny** do zarządzania podcastami
+- **Edytor treści** z prostym formatowaniem (bez wymagania API)
+- **Zarządzanie kategoriami** i cenami w PLN
+- **Monitoring zakupów** i statystyki sprzedaży
+
+## 🏗 Architektura Techniczna
 
 ### Frontend
-- **React** with TypeScript
-- **Vite** for development and building
-- **Tailwind CSS** with shadcn/ui components
-- **TanStack Query** for state management
-- **Wouter** for client-side routing
-- **React Hook Form** with Zod validation
-- **TinyMCE** for rich text editing
+- **React 18** z TypeScript i Vite
+- **Shadcn/UI** + Radix UI components
+- **Tailwind CSS** do stylizacji
+- **TanStack Query** do zarządzania stanem serwera
+- **Wouter** do routingu po stronie klienta
 
 ### Backend
-- **Node.js** with Express.js
-- **PostgreSQL** database (Neon serverless)
-- **Drizzle ORM** for database operations
-- **Stripe** for payment processing
-- **Google Cloud Storage** for file storage
-- **Replit Auth** (OpenID Connect) for authentication
+- **Node.js** z Express.js
+- **PostgreSQL** przez Neon serverless
+- **Drizzle ORM** z automatycznymi migracjami
+- **Passport.js** z OIDC strategy
 
-## 📋 Prerequisites
+### Zewnętrzne Serwisy
+- **Stripe** - płatności online w PLN
+- **Google Cloud Storage** - przechowywanie plików audio
+- **Replit Auth** - bezpieczna autentykacja użytkowników
 
-Before running this application, ensure you have:
+## 🚀 Uruchomienie Projektu
 
-1. **Node.js** (v18 or higher)
-2. **PostgreSQL database** - Can be set up through Replit's database service
-3. **Stripe account** - For payment processing
-4. **TinyMCE API key** - For rich text editing (optional, works in read-only mode without)
+### Wymagania
+- Node.js 18+
+- PostgreSQL database
+- Konto Stripe (klucze API)
+- Konto Replit (dla autentykacji)
 
-## 🔧 Environment Variables
+### Instalacja
 
-Create or ensure these environment variables are set:
-
-### Required for Authentication
-```
-DATABASE_URL=your_postgresql_connection_string
-SESSION_SECRET=your_session_secret_key
-REPLIT_DOMAINS=your_replit_domain
-REPL_ID=your_repl_id
-```
-
-### Required for Payments
-```
-STRIPE_SECRET_KEY=sk_test_...
-VITE_STRIPE_PUBLIC_KEY=pk_test_...
-```
-
-### Optional for Object Storage
-```
-DEFAULT_OBJECT_STORAGE_BUCKET_ID=your_bucket_id
-PRIVATE_OBJECT_DIR=your_private_directory
-PUBLIC_OBJECT_SEARCH_PATHS=your_public_paths
-```
-
-### Optional for Rich Text Editor
-```
-VITE_TINYMCE_API_KEY=your_tinymce_api_key
-```
-
-## 🚀 Getting Started
-
-### Step 1: Clone and Install Dependencies
-
+1. **Klonowanie repozytorium:**
 ```bash
-# Clone the repository (if using git)
-git clone <your-repo-url>
+git clone <repository-url>
 cd devpodcasts
+```
 
-# Install dependencies
+2. **Instalacja zależności:**
+```bash
 npm install
 ```
 
-### Step 2: Set Up Database
-
+3. **Konfiguracja zmiennych środowiskowych:**
 ```bash
-# Push database schema to your PostgreSQL instance
-npm run db:push
-
-# Seed the database with sample Polish podcast data
-npm run seed
+# Wymagane zmienne:
+DATABASE_URL=postgresql://...
+STRIPE_SECRET_KEY=sk_...
+VITE_STRIPE_PUBLIC_KEY=pk_...
+SESSION_SECRET=your-session-secret
+REPL_ID=your-repl-id
+REPLIT_DOMAINS=your-domain.replit.dev
 ```
 
-### Step 3: Configure Stripe
-
-1. Go to [Stripe Dashboard](https://dashboard.stripe.com/apikeys)
-2. Copy your **Publishable key** (starts with `pk_`) to `VITE_STRIPE_PUBLIC_KEY`
-3. Copy your **Secret key** (starts with `sk_`) to `STRIPE_SECRET_KEY`
-
-### Step 4: Configure TinyMCE (Optional)
-
-1. Go to [TinyMCE Cloud](https://www.tiny.cloud/)
-2. Create a free account and get your API key
-3. Set `VITE_TINYMCE_API_KEY` environment variable
-4. Without this key, the editor works in read-only mode
-
-### Step 5: Start the Application
-
+4. **Inicjalizacja bazy danych:**
 ```bash
-# Start both frontend and backend servers
+npm run db:push
+```
+
+5. **Uruchomienie w trybie developerskim:**
+```bash
 npm run dev
 ```
 
-The application will be available at:
-- **Frontend**: `http://localhost:5173` (or your Replit URL)
-- **Backend API**: `http://localhost:5000/api`
+Aplikacja będzie dostępna na `http://localhost:5000`
 
-## 📁 Project Structure
+## 📁 Struktura Projektu
 
 ```
-├── client/                  # Frontend React application
-│   ├── src/
-│   │   ├── components/     # Reusable UI components
-│   │   ├── hooks/          # Custom React hooks
-│   │   ├── lib/            # Utility functions and configurations
-│   │   ├── pages/          # Page components
-│   │   └── App.tsx         # Main application component
-├── server/                 # Backend Express application
-│   ├── db.ts              # Database connection
-│   ├── index.ts           # Server entry point
-│   ├── routes.ts          # API routes
-│   ├── storage.ts         # Database operations
-│   ├── replitAuth.ts      # Authentication setup
-│   ├── objectStorage.ts   # File storage operations
-│   └── seed.ts            # Database seeding
-├── shared/                # Shared types and schemas
-│   └── schema.ts          # Database schema definitions
-└── README.md              # This file
+├── client/src/
+│   ├── components/     # Komponenty UI (przyciski, formularze)
+│   ├── pages/         # Strony aplikacji
+│   ├── hooks/         # Custom React hooks
+│   └── lib/           # Utilities i konfiguracja
+├── server/
+│   ├── routes.ts      # API endpoints
+│   ├── storage.ts     # Warstwa dostępu do danych
+│   ├── db.ts         # Konfiguracja Drizzle ORM
+│   └── replitAuth.ts  # Konfiguracja autentykacji
+├── shared/
+│   └── schema.ts      # Wspólne typy i schematy Zod
+└── README.md
 ```
 
-## 🎯 Usage Guide
+## 🛡 Bezpieczeństwo
 
-### For End Users
+- **HTTPS** wymagane w produkcji
+- **Sesje** przechowywane bezpiecznie w PostgreSQL
+- **CSRF protection** przez walidację sesji
+- **Stripe payments** z pełną tokenizacją kart
+- **File uploads** z ACL (Access Control Lists)
 
-1. **Browse Podcasts**: Visit the landing page to see all available programming podcasts
-2. **View Details**: Click any podcast card to see the individual product page
-3. **Purchase**: Use the "Kup Teraz" button to buy podcasts with Stripe
-4. **Access Library**: After purchase, find your podcasts in "Moja Biblioteka"
+## 📊 Baza Danych
 
-### For Administrators
+### Główne Tabele
+- `users` - dane użytkowników z Replit Auth
+- `categories` - kategorie podcastów (Java, JS, Azure, Architecture)
+- `podcasts` - produkty z opisami, cenami, plikami audio
+- `purchases` - historia zakupów użytkowników
+- `sessions` - sesje autentykacji
 
-1. **Login**: Use Replit Auth to authenticate
-2. **Access Admin Panel**: Navigate to `/admin` after logging in
-3. **Manage Podcasts**: Create, edit, or delete podcast entries
-4. **Rich Content**: Use TinyMCE editor for detailed product descriptions
-5. **Monitor Sales**: View user purchases and manage content
+### Relacje
+- Podcast → Category (many-to-one)
+- Purchase → User + Podcast (many-to-many przez junction table)
 
-## 🔗 API Endpoints
+## 🔧 Dostępne Komendy
 
-### Public Endpoints
-- `GET /api/categories` - Get all podcast categories
-- `GET /api/categories/:slug/podcasts` - Get podcasts by category
-- `GET /api/podcasts/:slug` - Get individual podcast details
+```bash
+# Rozwój
+npm run dev          # Uruchom serwer developmentu
+npm run db:push      # Zastosuj zmiany w schemacie do bazy
+npm run db:studio    # Otwórz Drizzle Studio
 
-### Authentication Endpoints
-- `GET /api/login` - Start login process
-- `GET /api/logout` - Logout user
-- `GET /api/auth/user` - Get current user info
+# Produkcja
+npm run build        # Zbuduj aplikację
+npm start           # Uruchom serwer produkcyjny
+```
 
-### Protected Endpoints
-- `GET /api/admin/podcasts` - Get all podcasts (admin)
-- `POST /api/admin/podcasts` - Create new podcast (admin)
-- `PUT /api/admin/podcasts/:id` - Update podcast (admin)
-- `DELETE /api/admin/podcasts/:id` - Delete podcast (admin)
-- `GET /api/user/purchases` - Get user's purchased podcasts
+## 🐛 Debugowanie
 
-### Payment Endpoints
-- `POST /api/create-payment-intent` - Create Stripe payment
-- `POST /api/purchases` - Complete purchase after payment
+### Logi Serwera
+- Express logi dostępne w konsoli
+- Błędy Stripe logowane z pełnymi szczegółami
+- Database queries widoczne w trybie debug
 
-## 🛡️ Security Features
+### Popularne Problemy
 
-- **Session-based Authentication** with PostgreSQL storage
-- **CSRF Protection** via secure session validation
-- **Input Validation** using Zod schemas
-- **SQL Injection Prevention** through Drizzle ORM
-- **Secure File Storage** with access control lists
+1. **"Podcast nie znaleziony" na checkout**
+   - Sprawdź czy endpoint `/api/podcasts/by-id/:id` działa
+   - Zweryfikuj ID podcastu w URL
 
-## 📱 Mobile Responsive
+2. **Błędy płatności Stripe**
+   - Upewnij się że `STRIPE_SECRET_KEY` jest ustawiony
+   - Sprawdź czy używasz najnowszej wersji API Stripe
 
-The application is fully responsive and works on:
-- Desktop browsers
-- Tablets
-- Mobile devices
+3. **Problemy z autentykacją**
+   - Zweryfikuj konfigurację `REPLIT_DOMAINS`
+   - Sprawdź czy `SESSION_SECRET` jest ustawiony
 
-## 🐛 Troubleshooting
+## 📈 Roadmapa
 
-### Common Issues
+- [ ] Dodanie systemu recenzji podcastów
+- [ ] Implementacja wishlisty użytkowników  
+- [ ] Powiadomienia email o nowych podcastach
+- [ ] Statystyki słuchaczy dla autorów
+- [ ] Program partnerski dla twórców treści
 
-1. **Database Connection Failed**
-   - Check `DATABASE_URL` environment variable
-   - Ensure PostgreSQL service is running
-   - Run `npm run db:push` to sync schema
+## 🤝 Wsparcie
 
-2. **Stripe Payments Not Working**
-   - Verify Stripe API keys are correctly set
-   - Check if keys match your Stripe account environment (test/live)
-   - Ensure webhooks are configured for production
+Dla problemów technicznych lub pytań biznesowych:
+- Stwórz issue na GitHubie
+- Napisz na email support@devpodcasts.pl
+- Dołącz do naszego Discord serwera
 
-3. **TinyMCE Read-Only Mode**
-   - This is normal without an API key
-   - Get a free API key from TinyMCE Cloud for full functionality
+## 📄 Licencja
 
-4. **Authentication Issues**
-   - Verify `SESSION_SECRET` is set
-   - Check `REPLIT_DOMAINS` and `REPL_ID` variables
-   - Clear browser cookies and try again
-
-## 🚀 Deployment
-
-### On Replit
-1. The app is ready to deploy on Replit
-2. Use the Deploy button in your Repl
-3. Configure environment variables in deployment settings
-
-### Manual Deployment
-1. Build the frontend: `npm run build`
-2. Set up production database
-3. Configure production environment variables
-4. Deploy to your preferred hosting service
-
-## 📄 License
-
-This project is proprietary software for DevPodcasts marketplace.
-
-## 👥 Support
-
-For technical support or questions about the marketplace, please contact the development team.
+Ten projekt jest własnością prywatną. Wszystkie prawa zastrzeżone.
 
 ---
 
-**Made with ❤️ for Polish developers**
+**DevPodcasts** - Profesjonalne podcasty programistyczne po polsku 🎧
