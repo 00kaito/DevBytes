@@ -11,6 +11,7 @@ import Library from "@/pages/library";
 import Checkout from "@/pages/checkout";
 import Admin from "@/pages/admin";
 import Register from "@/pages/register";
+import Product from "@/pages/product";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -21,6 +22,7 @@ function Router() {
         <>
           <Route path="/" component={Landing} />
           <Route path="/register" component={Register} />
+          <Route path="/product/:slug" component={Product} />
           <Route path="/checkout/:podcastId" component={Checkout} />
         </>
       ) : (
@@ -28,6 +30,7 @@ function Router() {
           <Route path="/" component={Home} />
           <Route path="/library" component={Library} />
           <Route path="/admin" component={Admin} />
+          <Route path="/product/:slug" component={Product} />
           <Route path="/checkout/:podcastId" component={Checkout} />
         </>
       )}

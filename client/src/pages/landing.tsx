@@ -216,18 +216,27 @@ export default function Landing() {
                         </div>
                       )}
                     </div>
-                    <h4 className="text-lg font-semibold mb-2">{podcast.title}</h4>
+                    <Link href={`/product/${podcast.slug}`}>
+                      <h4 className="text-lg font-semibold mb-2 hover:text-blue-600 transition-colors cursor-pointer">{podcast.title}</h4>
+                    </Link>
                     <p className="text-slate-600 text-sm mb-4 line-clamp-3">
-                      {podcast.description}
+                      {podcast.description?.replace(/<[^>]*>/g, '').substring(0, 120)}...
                     </p>
                     <div className="flex justify-between items-center">
                       <span className="text-2xl font-bold text-blue-600">
                         {formatPrice(podcast.price)}
                       </span>
-                      <Button onClick={() => handleBuyPodcast(podcast.id)} className="bg-amber-500 hover:bg-amber-600">
-                        <ShoppingCart className="mr-2 h-4 w-4" />
-                        Kup
-                      </Button>
+                      <div className="flex space-x-2">
+                        <Link href={`/product/${podcast.slug}`}>
+                          <Button variant="outline" size="sm">
+                            Zobacz więcej
+                          </Button>
+                        </Link>
+                        <Button onClick={() => handleBuyPodcast(podcast.id)} className="bg-amber-500 hover:bg-amber-600">
+                          <ShoppingCart className="mr-2 h-4 w-4" />
+                          Kup
+                        </Button>
+                      </div>
                     </div>
                   </Card>
                 ))}
@@ -254,9 +263,11 @@ export default function Landing() {
                         </div>
                       )}
                     </div>
-                    <h4 className="text-lg font-semibold mb-2">{podcast.title}</h4>
+                    <Link href={`/product/${podcast.slug}`}>
+                      <h4 className="text-lg font-semibold mb-2 hover:text-blue-600 transition-colors cursor-pointer">{podcast.title}</h4>
+                    </Link>
                     <p className="text-slate-600 text-sm mb-4 line-clamp-3">
-                      {podcast.description}
+                      {podcast.description?.replace(/<[^>]*>/g, '').substring(0, 120)}...
                     </p>
                     <div className="flex justify-between items-center">
                       <span className="text-2xl font-bold text-blue-600">
@@ -292,18 +303,27 @@ export default function Landing() {
                         </div>
                       )}
                     </div>
-                    <h4 className="text-lg font-semibold mb-2">{podcast.title}</h4>
+                    <Link href={`/product/${podcast.slug}`}>
+                      <h4 className="text-lg font-semibold mb-2 hover:text-blue-600 transition-colors cursor-pointer">{podcast.title}</h4>
+                    </Link>
                     <p className="text-slate-600 text-sm mb-4 line-clamp-3">
-                      {podcast.description}
+                      {podcast.description?.replace(/<[^>]*>/g, '').substring(0, 120)}...
                     </p>
                     <div className="flex justify-between items-center">
                       <span className="text-2xl font-bold text-blue-600">
                         {formatPrice(podcast.price)}
                       </span>
-                      <Button onClick={() => handleBuyPodcast(podcast.id)} className="bg-amber-500 hover:bg-amber-600">
-                        <ShoppingCart className="mr-2 h-4 w-4" />
-                        Kup
-                      </Button>
+                      <div className="flex space-x-2">
+                        <Link href={`/product/${podcast.slug}`}>
+                          <Button variant="outline" size="sm">
+                            Zobacz więcej
+                          </Button>
+                        </Link>
+                        <Button onClick={() => handleBuyPodcast(podcast.id)} className="bg-amber-500 hover:bg-amber-600">
+                          <ShoppingCart className="mr-2 h-4 w-4" />
+                          Kup
+                        </Button>
+                      </div>
                     </div>
                   </Card>
                 ))}
@@ -330,18 +350,27 @@ export default function Landing() {
                         </div>
                       )}
                     </div>
-                    <h4 className="text-lg font-semibold mb-2">{podcast.title}</h4>
+                    <Link href={`/product/${podcast.slug}`}>
+                      <h4 className="text-lg font-semibold mb-2 hover:text-blue-600 transition-colors cursor-pointer">{podcast.title}</h4>
+                    </Link>
                     <p className="text-slate-600 text-sm mb-4 line-clamp-3">
-                      {podcast.description}
+                      {podcast.description?.replace(/<[^>]*>/g, '').substring(0, 120)}...
                     </p>
                     <div className="flex justify-between items-center">
                       <span className="text-2xl font-bold text-blue-600">
                         {formatPrice(podcast.price)}
                       </span>
-                      <Button onClick={() => handleBuyPodcast(podcast.id)} className="bg-amber-500 hover:bg-amber-600">
-                        <ShoppingCart className="mr-2 h-4 w-4" />
-                        Kup
-                      </Button>
+                      <div className="flex space-x-2">
+                        <Link href={`/product/${podcast.slug}`}>
+                          <Button variant="outline" size="sm">
+                            Zobacz więcej
+                          </Button>
+                        </Link>
+                        <Button onClick={() => handleBuyPodcast(podcast.id)} className="bg-amber-500 hover:bg-amber-600">
+                          <ShoppingCart className="mr-2 h-4 w-4" />
+                          Kup
+                        </Button>
+                      </div>
                     </div>
                   </Card>
                 ))}

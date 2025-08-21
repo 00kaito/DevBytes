@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ import { Link } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { Editor } from '@tinymce/tinymce-react';
 import { Plus, Edit, Trash2, ArrowLeft, LogOut, Settings } from "lucide-react";
 import type { Podcast, Category } from "@shared/schema";
 
@@ -319,7 +320,26 @@ export default function Admin() {
                         <FormItem>
                           <FormLabel>Opis</FormLabel>
                           <FormControl>
-                            <Textarea {...field} rows={4} />
+                            <Editor
+                              apiKey="no-api-key"
+                              value={field.value}
+                              onEditorChange={(content: string) => field.onChange(content)}
+                              init={{
+                                height: 300,
+                                menubar: false,
+                                plugins: [
+                                  'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
+                                  'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+                                  'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'
+                                ],
+                                toolbar: 'undo redo | blocks | ' +
+                                  'bold italic forecolor | alignleft aligncenter ' +
+                                  'alignright alignjustify | bullist numlist outdent indent | ' +
+                                  'removeformat | help',
+                                content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
+                                language: 'pl'
+                              }}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
