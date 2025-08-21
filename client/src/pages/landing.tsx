@@ -206,7 +206,8 @@ export default function Landing() {
               </div>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {javaPodcasts.map((podcast, index) => (
-                  <Card key={podcast.id} className="p-6 hover:shadow-lg transition-all duration-300 border border-slate-200 hover:border-blue-600">
+                  <Card key={podcast.id} className="p-6 hover:shadow-lg transition-all duration-300 border border-slate-200 hover:border-blue-600 cursor-pointer"
+                    onClick={() => window.location.href = `/product/${podcast.slug}`}>
                     <div className={`h-48 bg-gradient-to-br ${getGradientClass(index)} rounded-lg mb-4 flex items-center justify-center relative overflow-hidden`}>
                       <div className="absolute inset-0 bg-black/20"></div>
                       <Headphones className="h-12 w-12 text-white relative z-10" />
@@ -253,7 +254,8 @@ export default function Landing() {
               </div>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {jsPodcasts.map((podcast, index) => (
-                  <Card key={podcast.id} className="p-6 hover:shadow-lg transition-all duration-300 border border-slate-200 hover:border-blue-600">
+                  <Card key={podcast.id} className="p-6 hover:shadow-lg transition-all duration-300 border border-slate-200 hover:border-blue-600 cursor-pointer"
+                    onClick={() => window.location.href = `/product/${podcast.slug}`}>
                     <div className={`h-48 bg-gradient-to-br ${getGradientClass(index + 5)} rounded-lg mb-4 flex items-center justify-center relative overflow-hidden`}>
                       <div className="absolute inset-0 bg-black/20"></div>
                       <Headphones className="h-12 w-12 text-white relative z-10" />
@@ -293,7 +295,8 @@ export default function Landing() {
               </div>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {azurePodcasts.map((podcast, index) => (
-                  <Card key={podcast.id} className="p-6 hover:shadow-lg transition-all duration-300 border border-slate-200 hover:border-blue-600">
+                  <Card key={podcast.id} className="p-6 hover:shadow-lg transition-all duration-300 border border-slate-200 hover:border-blue-600 cursor-pointer"
+                    onClick={() => window.location.href = `/product/${podcast.slug}`}>
                     <div className={`h-48 bg-gradient-to-br ${getGradientClass(index + 10)} rounded-lg mb-4 flex items-center justify-center relative overflow-hidden`}>
                       <div className="absolute inset-0 bg-black/20"></div>
                       <Headphones className="h-12 w-12 text-white relative z-10" />
@@ -340,7 +343,8 @@ export default function Landing() {
               </div>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {archPodcasts.map((podcast, index) => (
-                  <Card key={podcast.id} className="p-6 hover:shadow-lg transition-all duration-300 border border-slate-200 hover:border-blue-600">
+                  <Card key={podcast.id} className="p-6 hover:shadow-lg transition-all duration-300 border border-slate-200 hover:border-blue-600 cursor-pointer"
+                    onClick={() => window.location.href = `/product/${podcast.slug}`}>
                     <div className={`h-48 bg-gradient-to-br ${getGradientClass(index + 15)} rounded-lg mb-4 flex items-center justify-center relative overflow-hidden`}>
                       <div className="absolute inset-0 bg-black/20"></div>
                       <Headphones className="h-12 w-12 text-white relative z-10" />
