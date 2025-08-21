@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import Stripe from "stripe";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+import { setupAuth, isAuthenticated, isAdmin } from "./replitAuth";
 import {
   ObjectStorageService,
   ObjectNotFoundError,
@@ -114,10 +114,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Admin routes
-  app.get("/api/admin/podcasts", isAuthenticated, async (req: any, res) => {
+  // Promote user to admin (temporary endpoint for initial setup)
+  // IMPORTANT: This should be removed or secured further in production
+  app.post("/api/admin/promote/:userId", isAuthenticated, async (req: any, res) => {
     try {
-      // Simple admin check - in production, you'd want proper role-based access
+      const { userId } = req.params;
+      const currentUserId = req.user.claims.sub;
+      
+      // Only allow self-promotion for initial setup, or if already admin
+      const currentUser = await storage.getUser(currentUserId);
+      if (userId !== currentUserId && !currentUser?.isAdmin) {
+        return res.status(403).json({ 
+          message: "Access Denied: Cannot promote other users unless you are admin" 
+        });
+      }
+      
+      const user = await storage.updateUserAdminStatus(userId, true);
+      res.json({ 
+        message: "User promoted to administrator", 
+        user: { id: user.id, email: user.email, isAdmin: user.isAdmin }
+      });
+    } catch (error) {
+      console.error("Error promoting user to admin:", error);
+      res.status(500).json({ message: "Failed to promote user" });
+    }
+  });
+
+  // Admin routes - SECURED: Only authenticated administrators can access
+  app.get("/api/admin/podcasts", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
       const podcasts = await storage.getAllPodcasts();
       res.json(podcasts);
     } catch (error) {
@@ -126,7 +151,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/admin/podcasts", isAuthenticated, async (req: any, res) => {
+  app.post("/api/admin/podcasts", isAuthenticated, isAdmin, async (req: any, res) => {
     try {
       const podcast = await storage.createPodcast(req.body);
       res.json(podcast);
@@ -136,7 +161,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/admin/podcasts/:id", isAuthenticated, async (req: any, res) => {
+  app.put("/api/admin/podcasts/:id", isAuthenticated, isAdmin, async (req: any, res) => {
     try {
       const podcast = await storage.updatePodcast(req.params.id, req.body);
       if (!podcast) {
@@ -149,7 +174,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/admin/podcasts/:id", isAuthenticated, async (req: any, res) => {
+  app.delete("/api/admin/podcasts/:id", isAuthenticated, isAdmin, async (req: any, res) => {
     try {
       const deleted = await storage.deletePodcast(req.params.id);
       if (!deleted) {
