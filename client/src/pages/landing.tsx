@@ -206,8 +206,7 @@ export default function Landing() {
               </div>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {javaPodcasts.map((podcast, index) => (
-                  <Card key={podcast.id} className="p-6 hover:shadow-lg transition-all duration-300 border border-slate-200 hover:border-blue-600 cursor-pointer"
-                    onClick={() => window.location.href = `/product/${podcast.slug}`}>
+                  <Card key={podcast.id} className="p-6 hover:shadow-lg transition-all duration-300 border border-slate-200 hover:border-blue-600">
                     <div className={`h-48 bg-gradient-to-br ${getGradientClass(index)} rounded-lg mb-4 flex items-center justify-center relative overflow-hidden`}>
                       <div className="absolute inset-0 bg-black/20"></div>
                       <Headphones className="h-12 w-12 text-white relative z-10" />
@@ -217,27 +216,25 @@ export default function Landing() {
                         </div>
                       )}
                     </div>
-                    <Link href={`/product/${podcast.slug}`}>
-                      <h4 className="text-lg font-semibold mb-2 hover:text-blue-600 transition-colors cursor-pointer">{podcast.title}</h4>
-                    </Link>
+                    <h4 className="text-lg font-semibold mb-2">{podcast.title}</h4>
                     <p className="text-slate-600 text-sm mb-4 line-clamp-3">
                       {podcast.description?.replace(/<[^>]*>/g, '').substring(0, 120)}...
                     </p>
-                    <div className="flex justify-between items-center">
+                    <div className="flex justify-between items-center mb-4">
                       <span className="text-2xl font-bold text-blue-600">
                         {formatPrice(podcast.price)}
                       </span>
-                      <div className="flex space-x-2">
-                        <Link href={`/product/${podcast.slug}`}>
-                          <Button variant="outline" size="sm" onClick={(e) => e.stopPropagation()}>
-                            Zobacz więcej
-                          </Button>
-                        </Link>
-                        <Button onClick={(e) => { e.stopPropagation(); handleBuyPodcast(podcast.id); }} className="bg-amber-500 hover:bg-amber-600">
-                          <ShoppingCart className="mr-2 h-4 w-4" />
-                          Kup
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <Link href={`/product/${podcast.slug}`} className="w-full">
+                        <Button variant="outline" className="w-full">
+                          Poznaj produkt
                         </Button>
-                      </div>
+                      </Link>
+                      <Button onClick={() => handleBuyPodcast(podcast.id)} className="bg-amber-500 hover:bg-amber-600 w-full">
+                        <ShoppingCart className="mr-2 h-4 w-4" />
+                        Kup
+                      </Button>
                     </div>
                   </Card>
                 ))}
@@ -254,8 +251,7 @@ export default function Landing() {
               </div>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {jsPodcasts.map((podcast, index) => (
-                  <Card key={podcast.id} className="p-6 hover:shadow-lg transition-all duration-300 border border-slate-200 hover:border-blue-600 cursor-pointer"
-                    onClick={() => window.location.href = `/product/${podcast.slug}`}>
+                  <Card key={podcast.id} className="p-6 hover:shadow-lg transition-all duration-300 border border-slate-200 hover:border-blue-600">
                     <div className={`h-48 bg-gradient-to-br ${getGradientClass(index + 5)} rounded-lg mb-4 flex items-center justify-center relative overflow-hidden`}>
                       <div className="absolute inset-0 bg-black/20"></div>
                       <Headphones className="h-12 w-12 text-white relative z-10" />
@@ -265,27 +261,25 @@ export default function Landing() {
                         </div>
                       )}
                     </div>
-                    <Link href={`/product/${podcast.slug}`}>
-                      <h4 className="text-lg font-semibold mb-2 hover:text-blue-600 transition-colors cursor-pointer">{podcast.title}</h4>
-                    </Link>
+                    <h4 className="text-lg font-semibold mb-2">{podcast.title}</h4>
                     <p className="text-slate-600 text-sm mb-4 line-clamp-3">
                       {podcast.description?.replace(/<[^>]*>/g, '').substring(0, 120)}...
                     </p>
-                    <div className="flex justify-between items-center">
+                    <div className="flex justify-between items-center mb-4">
                       <span className="text-2xl font-bold text-blue-600">
                         {formatPrice(podcast.price)}
                       </span>
-                      <div className="flex space-x-2">
-                        <Link href={`/product/${podcast.slug}`}>
-                          <Button variant="outline" size="sm" onClick={(e) => e.stopPropagation()}>
-                            Zobacz więcej
-                          </Button>
-                        </Link>
-                        <Button onClick={(e) => { e.stopPropagation(); handleBuyPodcast(podcast.id); }} className="bg-amber-500 hover:bg-amber-600">
-                          <ShoppingCart className="mr-2 h-4 w-4" />
-                          Kup
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <Link href={`/product/${podcast.slug}`} className="w-full">
+                        <Button variant="outline" className="w-full">
+                          Poznaj produkt
                         </Button>
-                      </div>
+                      </Link>
+                      <Button onClick={() => handleBuyPodcast(podcast.id)} className="bg-amber-500 hover:bg-amber-600 w-full">
+                        <ShoppingCart className="mr-2 h-4 w-4" />
+                        Kup
+                      </Button>
                     </div>
                   </Card>
                 ))}
@@ -302,8 +296,7 @@ export default function Landing() {
               </div>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {azurePodcasts.map((podcast, index) => (
-                  <Card key={podcast.id} className="p-6 hover:shadow-lg transition-all duration-300 border border-slate-200 hover:border-blue-600 cursor-pointer"
-                    onClick={() => window.location.href = `/product/${podcast.slug}`}>
+                  <Card key={podcast.id} className="p-6 hover:shadow-lg transition-all duration-300 border border-slate-200 hover:border-blue-600">
                     <div className={`h-48 bg-gradient-to-br ${getGradientClass(index + 10)} rounded-lg mb-4 flex items-center justify-center relative overflow-hidden`}>
                       <div className="absolute inset-0 bg-black/20"></div>
                       <Headphones className="h-12 w-12 text-white relative z-10" />
@@ -313,27 +306,25 @@ export default function Landing() {
                         </div>
                       )}
                     </div>
-                    <Link href={`/product/${podcast.slug}`}>
-                      <h4 className="text-lg font-semibold mb-2 hover:text-blue-600 transition-colors cursor-pointer">{podcast.title}</h4>
-                    </Link>
+                    <h4 className="text-lg font-semibold mb-2">{podcast.title}</h4>
                     <p className="text-slate-600 text-sm mb-4 line-clamp-3">
                       {podcast.description?.replace(/<[^>]*>/g, '').substring(0, 120)}...
                     </p>
-                    <div className="flex justify-between items-center">
+                    <div className="flex justify-between items-center mb-4">
                       <span className="text-2xl font-bold text-blue-600">
                         {formatPrice(podcast.price)}
                       </span>
-                      <div className="flex space-x-2">
-                        <Link href={`/product/${podcast.slug}`}>
-                          <Button variant="outline" size="sm" onClick={(e) => e.stopPropagation()}>
-                            Zobacz więcej
-                          </Button>
-                        </Link>
-                        <Button onClick={(e) => { e.stopPropagation(); handleBuyPodcast(podcast.id); }} className="bg-amber-500 hover:bg-amber-600">
-                          <ShoppingCart className="mr-2 h-4 w-4" />
-                          Kup
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <Link href={`/product/${podcast.slug}`} className="w-full">
+                        <Button variant="outline" className="w-full">
+                          Poznaj produkt
                         </Button>
-                      </div>
+                      </Link>
+                      <Button onClick={() => handleBuyPodcast(podcast.id)} className="bg-amber-500 hover:bg-amber-600 w-full">
+                        <ShoppingCart className="mr-2 h-4 w-4" />
+                        Kup
+                      </Button>
                     </div>
                   </Card>
                 ))}
@@ -371,17 +362,17 @@ export default function Landing() {
                       <span className="text-2xl font-bold text-blue-600">
                         {formatPrice(podcast.price)}
                       </span>
-                      <div className="flex space-x-2">
-                        <Link href={`/product/${podcast.slug}`}>
-                          <Button variant="outline" size="sm" onClick={(e) => e.stopPropagation()}>
-                            Zobacz więcej
-                          </Button>
-                        </Link>
-                        <Button onClick={(e) => { e.stopPropagation(); handleBuyPodcast(podcast.id); }} className="bg-amber-500 hover:bg-amber-600">
-                          <ShoppingCart className="mr-2 h-4 w-4" />
-                          Kup
+                    <div className="flex flex-col gap-2">
+                      <Link href={`/product/${podcast.slug}`} className="w-full">
+                        <Button variant="outline" className="w-full">
+                          Poznaj produkt
                         </Button>
-                      </div>
+                      </Link>
+                      <Button onClick={() => handleBuyPodcast(podcast.id)} className="bg-amber-500 hover:bg-amber-600 w-full">
+                        <ShoppingCart className="mr-2 h-4 w-4" />
+                        Kup
+                      </Button>
+                    </div>
                     </div>
                   </Card>
                 ))}
