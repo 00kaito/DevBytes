@@ -229,11 +229,11 @@ export default function Landing() {
                       </span>
                       <div className="flex space-x-2">
                         <Link href={`/product/${podcast.slug}`}>
-                          <Button variant="outline" size="sm">
+                          <Button variant="outline" size="sm" onClick={(e) => e.stopPropagation()}>
                             Zobacz więcej
                           </Button>
                         </Link>
-                        <Button onClick={() => handleBuyPodcast(podcast.id)} className="bg-amber-500 hover:bg-amber-600">
+                        <Button onClick={(e) => { e.stopPropagation(); handleBuyPodcast(podcast.id); }} className="bg-amber-500 hover:bg-amber-600">
                           <ShoppingCart className="mr-2 h-4 w-4" />
                           Kup
                         </Button>
@@ -275,10 +275,17 @@ export default function Landing() {
                       <span className="text-2xl font-bold text-blue-600">
                         {formatPrice(podcast.price)}
                       </span>
-                      <Button onClick={() => handleBuyPodcast(podcast.id)} className="bg-amber-500 hover:bg-amber-600">
-                        <ShoppingCart className="mr-2 h-4 w-4" />
-                        Kup
-                      </Button>
+                      <div className="flex space-x-2">
+                        <Link href={`/product/${podcast.slug}`}>
+                          <Button variant="outline" size="sm" onClick={(e) => e.stopPropagation()}>
+                            Zobacz więcej
+                          </Button>
+                        </Link>
+                        <Button onClick={(e) => { e.stopPropagation(); handleBuyPodcast(podcast.id); }} className="bg-amber-500 hover:bg-amber-600">
+                          <ShoppingCart className="mr-2 h-4 w-4" />
+                          Kup
+                        </Button>
+                      </div>
                     </div>
                   </Card>
                 ))}
@@ -318,11 +325,11 @@ export default function Landing() {
                       </span>
                       <div className="flex space-x-2">
                         <Link href={`/product/${podcast.slug}`}>
-                          <Button variant="outline" size="sm">
+                          <Button variant="outline" size="sm" onClick={(e) => e.stopPropagation()}>
                             Zobacz więcej
                           </Button>
                         </Link>
-                        <Button onClick={() => handleBuyPodcast(podcast.id)} className="bg-amber-500 hover:bg-amber-600">
+                        <Button onClick={(e) => { e.stopPropagation(); handleBuyPodcast(podcast.id); }} className="bg-amber-500 hover:bg-amber-600">
                           <ShoppingCart className="mr-2 h-4 w-4" />
                           Kup
                         </Button>
@@ -366,11 +373,11 @@ export default function Landing() {
                       </span>
                       <div className="flex space-x-2">
                         <Link href={`/product/${podcast.slug}`}>
-                          <Button variant="outline" size="sm">
+                          <Button variant="outline" size="sm" onClick={(e) => e.stopPropagation()}>
                             Zobacz więcej
                           </Button>
                         </Link>
-                        <Button onClick={() => handleBuyPodcast(podcast.id)} className="bg-amber-500 hover:bg-amber-600">
+                        <Button onClick={(e) => { e.stopPropagation(); handleBuyPodcast(podcast.id); }} className="bg-amber-500 hover:bg-amber-600">
                           <ShoppingCart className="mr-2 h-4 w-4" />
                           Kup
                         </Button>
