@@ -7,7 +7,7 @@ import { Headphones, BookOpen, ShoppingCart, LogOut, Settings } from "lucide-rea
 import type { Category, Podcast } from "@shared/schema";
 
 export default function Home() {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, logoutMutation } = useAuth();
 
   const { data: categories, isLoading: categoriesLoading } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
@@ -34,7 +34,7 @@ export default function Home() {
   });
 
   const handleLogout = () => {
-    window.location.href = "/api/logout";
+    logoutMutation.mutate();
   };
 
   const handleBuyPodcast = (podcastId: string) => {

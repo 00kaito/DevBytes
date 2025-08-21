@@ -138,6 +138,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // Also handle GET logout for compatibility
+  app.get('/api/logout', (req: any, res) => {
+    req.session.destroy((err: any) => {
+      if (err) {
+        console.error("Logout error:", err);
+        return res.status(500).json({ message: "Błąd podczas wylogowania" });
+      }
+      res.clearCookie('connect.sid');
+      res.redirect('/');
+    });
+  });
+
   // Login endpoint
   app.post('/api/login', async (req, res) => {
     try {

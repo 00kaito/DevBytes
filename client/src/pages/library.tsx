@@ -10,7 +10,7 @@ import { Headphones, BookOpen, Download, ArrowLeft, LogOut } from "lucide-react"
 import type { PurchaseWithPodcast } from "@shared/schema";
 
 export default function Library() {
-  const { user, isAuthenticated, isLoading } = useAuth();
+  const { user, isAuthenticated, isLoading, logoutMutation } = useAuth();
   const { toast } = useToast();
 
   // Redirect to home if not authenticated
@@ -49,7 +49,7 @@ export default function Library() {
   }, [error, toast]);
 
   const handleLogout = () => {
-    window.location.href = "/api/logout";
+    logoutMutation.mutate();
   };
 
   const handleDownload = (podcastId: string, title: string) => {

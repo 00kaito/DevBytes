@@ -33,7 +33,7 @@ const podcastFormSchema = z.object({
 type PodcastFormData = z.infer<typeof podcastFormSchema>;
 
 export default function Admin() {
-  const { user, isAuthenticated, isLoading } = useAuth();
+  const { user, isAuthenticated, isLoading, logoutMutation } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -207,7 +207,7 @@ export default function Admin() {
   });
 
   const handleLogout = () => {
-    window.location.href = "/api/logout";
+    logoutMutation.mutate();
   };
 
   const onSubmit = (data: PodcastFormData) => {

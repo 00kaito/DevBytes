@@ -21,7 +21,7 @@ import type { PodcastWithCategory } from "@shared/schema";
 
 export default function Product() {
   const { slug } = useParams<{ slug: string }>();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, logoutMutation } = useAuth();
 
   const { data: podcast, isLoading } = useQuery<PodcastWithCategory>({
     queryKey: ["/api/podcasts", slug],
@@ -33,7 +33,7 @@ export default function Product() {
   };
 
   const handleLogout = () => {
-    window.location.href = "/api/logout";
+    logoutMutation.mutate();
   };
 
   const handleBuyNow = () => {
