@@ -22,16 +22,6 @@ export class AuthService {
     return crypto.randomBytes(32).toString('hex');
   }
 
-  // Generate email verification token with expiration
-  static generateEmailVerificationToken(): {
-    token: string;
-    expires: Date;
-  } {
-    return {
-      token: this.generateToken(),
-      expires: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
-    };
-  }
 
   // Generate password reset token with expiration
   static generatePasswordResetToken(): {
@@ -44,43 +34,6 @@ export class AuthService {
     };
   }
 
-  // Verify email verification token
-  static async verifyEmailToken(token: string): Promise<{ success: boolean; userId?: string; message: string }> {
-    try {
-      const [user] = await db
-        .select()
-        .from(users)
-        .where(eq(users.emailVerificationToken, token));
-
-      if (!user) {
-        return { success: false, message: 'Nieprawidłowy token weryfikacji' };
-      }
-
-      if (!user.emailVerificationExpires || user.emailVerificationExpires < new Date()) {
-        return { success: false, message: 'Token weryfikacji wygasł' };
-      }
-
-      if (user.isEmailVerified) {
-        return { success: false, message: 'Email już został zweryfikowany' };
-      }
-
-      // Mark email as verified and clear verification token
-      await db
-        .update(users)
-        .set({
-          isEmailVerified: true,
-          emailVerificationToken: null,
-          emailVerificationExpires: null,
-          updatedAt: new Date(),
-        })
-        .where(eq(users.id, user.id));
-
-      return { success: true, userId: user.id, message: 'Email został pomyślnie zweryfikowany' };
-    } catch (error) {
-      console.error('Error verifying email token:', error);
-      return { success: false, message: 'Błąd podczas weryfikacji' };
-    }
-  }
 
   // Verify password reset token
   static async verifyPasswordResetToken(token: string): Promise<{ success: boolean; userId?: string; message: string }> {

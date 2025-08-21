@@ -1,11 +1,18 @@
-import type { Express } from "express";
+import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
+
+// Extend the session interface to include userId
+declare module 'express-session' {
+  interface SessionData {
+    userId?: string;
+  }
+}
 import Stripe from "stripe";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { storage } from "./storage";
 import { AuthService } from "./authService";
-import { sendEmailVerification, sendPasswordReset } from "./emailService";
+import { sendPasswordReset } from "./emailService";
 import {
   ObjectStorageService,
   ObjectNotFoundError,
@@ -89,39 +96,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Użytkownik z tym emailem już istnieje" });
       }
 
-      // Hash password and generate verification token
+      // Hash password
       const passwordHash = await AuthService.hashPassword(validatedData.password);
-      const { token: emailVerificationToken, expires: emailVerificationExpires } = 
-        AuthService.generateEmailVerificationToken();
 
-      // Create user
+      // Create user with verified email
       const user = await storage.createUser({
         email: validatedData.email,
         passwordHash,
         firstName: validatedData.firstName,
         lastName: validatedData.lastName,
-        emailVerificationToken,
-        emailVerificationExpires,
-        isEmailVerified: false,
+        emailVerificationToken: null,
+        emailVerificationExpires: null,
+        isEmailVerified: true,
       });
-
-      // Send verification email
-      const baseUrl = `${req.protocol}://${req.get('host')}`;
-      const emailSent = await sendEmailVerification({
-        to: user.email!,
-        firstName: user.firstName || 'Użytkowniku',
-        verificationToken: emailVerificationToken,
-        baseUrl,
-      });
-
-      if (!emailSent) {
-        console.error('Failed to send verification email');
-      }
 
       res.status(201).json({ 
-        message: "Konto zostało utworzone. Sprawdź email aby potwierdzić rejestrację.",
-        userId: user.id,
-        emailSent 
+        message: "Konto zostało utworzone pomyślnie. Możesz się teraz zalogować.",
+        userId: user.id
       });
     } catch (error: any) {
       console.error("Registration error:", error);
@@ -144,13 +135,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = await storage.getUserByEmail(validatedData.email);
       if (!user) {
         return res.status(401).json({ message: "Nieprawidłowy email lub hasło" });
-      }
-
-      // Check if email is verified
-      if (!user.isEmailVerified) {
-        return res.status(401).json({ 
-          message: "Email nie został zweryfikowany. Sprawdź swoją skrzynkę pocztową." 
-        });
       }
 
       // Verify password
@@ -206,25 +190,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Email verification endpoint
-  app.get('/api/verify-email', async (req, res) => {
-    try {
-      const { token } = req.query;
-      if (!token || typeof token !== 'string') {
-        return res.status(400).json({ message: "Brak tokena weryfikacji" });
-      }
-
-      const result = await AuthService.verifyEmailToken(token);
-      if (result.success) {
-        res.json({ message: result.message });
-      } else {
-        res.status(400).json({ message: result.message });
-      }
-    } catch (error) {
-      console.error("Email verification error:", error);
-      res.status(500).json({ message: "Błąd podczas weryfikacji email" });
-    }
-  });
 
   // Password reset request endpoint
   app.post('/api/forgot-password', async (req, res) => {

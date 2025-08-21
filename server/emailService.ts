@@ -1,14 +1,5 @@
-// EmailLabs.io configuration
-if (!process.env.EMAILLABS_APP_KEY || !process.env.EMAILLABS_SECRET_KEY) {
-  throw new Error("EMAILLABS_APP_KEY and EMAILLABS_SECRET_KEY environment variables must be set");
-}
-
-interface EmailVerificationParams {
-  to: string;
-  firstName: string;
-  verificationToken: string;
-  baseUrl: string;
-}
+// EmailLabs.io configuration - only needed for password reset emails
+// These are optional since email verification has been removed
 
 interface PasswordResetParams {
   to: string;
@@ -17,67 +8,16 @@ interface PasswordResetParams {
   baseUrl: string;
 }
 
-export async function sendEmailVerification(params: EmailVerificationParams): Promise<boolean> {
-  const verificationUrl = `${params.baseUrl}/verify-email?token=${params.verificationToken}`;
-  
-  try {
-    const credentials = Buffer.from(`${process.env.EMAILLABS_APP_KEY}:${process.env.EMAILLABS_SECRET_KEY}`).toString('base64');
-    
-    const emailData = new URLSearchParams({
-      from: process.env.EMAILLABS_FROM_EMAIL || 'noreply@your-domain.com',
-      from_name: 'DevPodcasts',
-      to: JSON.stringify({ [params.to]: { message_id: `verification_${Date.now()}` } }),
-      subject: 'Potwierdź swój adres email - DevPodcasts',
-      smtp_account: process.env.EMAILLABS_SMTP_ACCOUNT || '1.default.smtp',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h1 style="color: #2563eb;">Potwierdź swój adres email</h1>
-          <p>Cześć ${params.firstName}!</p>
-          <p>Dziękujemy za rejestrację w naszym marketplace podcastów. Aby dokończyć rejestrację, kliknij poniższy link:</p>
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${verificationUrl}" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
-              Potwierdź email
-            </a>
-          </div>
-          <p>Jeśli nie rejestrowałeś się w naszym serwisie, zignoruj ten email.</p>
-          <p>Link jest ważny przez 24 godziny.</p>
-          <hr style="margin: 30px 0; border: none; border-top: 1px solid #e5e7eb;">
-          <p style="color: #6b7280; font-size: 14px;">
-            Jeśli przycisk nie działa, skopiuj i wklej ten link do przeglądarki:<br>
-            <a href="${verificationUrl}">${verificationUrl}</a>
-          </p>
-        </div>
-      `,
-      text: `Potwierdź swój adres email\n\nCześć ${params.firstName}!\n\nDziękujemy za rejestrację w naszym marketplace podcastów. Aby dokończyć rejestrację, wejdź na następujący link:\n\n${verificationUrl}\n\nJeśli nie rejestrowałeś się w naszym serwisie, zignoruj ten email.\nLink jest ważny przez 24 godziny.`
-    });
-
-    const response = await fetch('https://api.emaillabs.net.pl/api/sendmail', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Authorization': `Basic ${credentials}`
-      },
-      body: emailData.toString()
-    });
-
-    const result = await response.json();
-    
-    if (response.ok && result.status === 'success') {
-      return true;
-    } else {
-      console.error('EmailLabs email verification error:', result);
-      return false;
-    }
-  } catch (error) {
-    console.error('EmailLabs email verification error:', error);
-    return false;
-  }
-}
 
 export async function sendPasswordReset(params: PasswordResetParams): Promise<boolean> {
   const resetUrl = `${params.baseUrl}/reset-password?token=${params.resetToken}`;
   
   try {
+    if (!process.env.EMAILLABS_APP_KEY || !process.env.EMAILLABS_SECRET_KEY) {
+      console.error('EmailLabs credentials not configured - password reset email not sent');
+      return false;
+    }
+    
     const credentials = Buffer.from(`${process.env.EMAILLABS_APP_KEY}:${process.env.EMAILLABS_SECRET_KEY}`).toString('base64');
     
     const emailData = new URLSearchParams({

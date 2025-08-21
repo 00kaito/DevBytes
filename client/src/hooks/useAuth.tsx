@@ -15,12 +15,12 @@ type AuthContextType = {
   isAuthenticated: boolean;
   loginMutation: UseMutationResult<User, Error, LoginUser>;
   logoutMutation: UseMutationResult<void, Error, void>;
-  registerMutation: UseMutationResult<{ message: string; userId: string; emailSent: boolean }, Error, RegisterUser>;
+  registerMutation: UseMutationResult<{ message: string; userId: string }, Error, RegisterUser>;
 };
 
 export const AuthContext = createContext<AuthContextType | null>(null);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+export function AuthProvider({ children }: { children: ReactNode }): JSX.Element {
   const { toast } = useToast();
   
   const {
