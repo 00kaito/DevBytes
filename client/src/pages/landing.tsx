@@ -35,13 +35,15 @@ export default function Landing() {
     enabled: !!categories,
   });
 
-  const handleLogin = () => {
-    window.location.href = "/api/login";
+  const { loginMutation } = useAuth();
+  
+  const handleLoginClick = () => {
+    window.location.href = "/login";
   };
 
   const handleBuyPodcast = (podcastId: string) => {
     if (!isAuthenticated) {
-      handleLogin();
+      handleLoginClick();
       return;
     }
     window.location.href = `/checkout/${podcastId}`;
@@ -109,7 +111,7 @@ export default function Landing() {
             <div className="flex items-center space-x-4">
               {!isAuthenticated && (
                 <div className="flex space-x-2">
-                  <Button variant="ghost" onClick={handleLogin} className="text-blue-600 hover:text-blue-700">
+                  <Button variant="ghost" onClick={handleLoginClick} className="text-blue-600 hover:text-blue-700">
                     Zaloguj się
                   </Button>
                   <Link href="/register">

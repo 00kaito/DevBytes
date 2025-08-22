@@ -33,7 +33,7 @@ const podcastFormSchema = z.object({
 type PodcastFormData = z.infer<typeof podcastFormSchema>;
 
 export default function Admin() {
-  const { user, isAuthenticated, isLoading } = useAuth();
+  const { user, isAuthenticated, isLoading, logoutMutation } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -54,11 +54,40 @@ export default function Admin() {
     }
   }, [isAuthenticated, isLoading, toast]);
 
-  const { data: podcasts, isLoading: podcastsLoading } = useQuery<Podcast[]>({
+  const { data: podcasts, isLoading: podcastsLoading, error: podcastsError } = useQuery<Podcast[]>({
     queryKey: ["/api/admin/podcasts"],
     enabled: isAuthenticated,
     retry: false,
   });
+
+  // Handle admin access denied
+  useEffect(() => {
+    if (podcastsError) {
+      const errorMessage = (podcastsError as Error).message;
+      if (errorMessage.includes('403') || errorMessage.includes('Access Denied')) {
+        toast({
+          title: "Brak uprawnień administratora",
+          description: "Nie masz uprawnień do dostępu do panelu administracyjnego.",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/";
+        }, 2000);
+        return;
+      }
+      if (isUnauthorizedError(podcastsError as Error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+    }
+  }, [podcastsError, toast]);
 
   const { data: categories } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
@@ -178,7 +207,7 @@ export default function Admin() {
   });
 
   const handleLogout = () => {
-    window.location.href = "/api/logout";
+    logoutMutation.mutate();
   };
 
   const onSubmit = (data: PodcastFormData) => {

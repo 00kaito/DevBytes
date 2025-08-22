@@ -7,7 +7,7 @@ import { Headphones, BookOpen, ShoppingCart, LogOut, Settings } from "lucide-rea
 import type { Category, Podcast } from "@shared/schema";
 
 export default function Home() {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, logoutMutation } = useAuth();
 
   const { data: categories, isLoading: categoriesLoading } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
@@ -23,8 +23,18 @@ export default function Home() {
     enabled: !!categories,
   });
 
+  const { data: azurePodcasts } = useQuery<Podcast[]>({
+    queryKey: ["/api/categories/azure/podcasts"],
+    enabled: !!categories,
+  });
+
+  const { data: archPodcasts } = useQuery<Podcast[]>({
+    queryKey: ["/api/categories/architecture/podcasts"],
+    enabled: !!categories,
+  });
+
   const handleLogout = () => {
-    window.location.href = "/api/logout";
+    logoutMutation.mutate();
   };
 
   const handleBuyPodcast = (podcastId: string) => {
@@ -79,12 +89,14 @@ export default function Home() {
                       Moja Biblioteka
                     </Button>
                   </Link>
-                  <Link href="/admin">
-                    <Button variant="ghost" className="flex items-center text-slate-700 hover:text-blue-600">
-                      <Settings className="mr-2 h-4 w-4" />
-                      Admin
-                    </Button>
-                  </Link>
+                  {user?.isAdmin && (
+                    <Link href="/admin">
+                      <Button variant="ghost" className="flex items-center text-slate-700 hover:text-blue-600">
+                        <Settings className="mr-2 h-4 w-4" />
+                        Admin
+                      </Button>
+                    </Link>
+                  )}
                   <div className="flex items-center space-x-2">
                     <span className="text-slate-700">
                       {user?.firstName} {user?.lastName}
@@ -138,7 +150,7 @@ export default function Home() {
                 <h3 className="text-2xl font-bold">Java</h3>
               </div>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {javaPodcasts.slice(0, 3).map((podcast, index) => (
+                {javaPodcasts.map((podcast, index) => (
                   <Card key={podcast.id} className="p-6 hover:shadow-lg transition-all duration-300 border border-slate-200 hover:border-blue-600">
                     <div className={`h-48 bg-gradient-to-br ${getGradientClass(index)} rounded-lg mb-4 flex items-center justify-center relative overflow-hidden`}>
                       <div className="absolute inset-0 bg-black/20"></div>
@@ -176,9 +188,85 @@ export default function Home() {
                 <h3 className="text-2xl font-bold">JavaScript</h3>
               </div>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {jsPodcasts.slice(0, 3).map((podcast, index) => (
+                {jsPodcasts.map((podcast, index) => (
                   <Card key={podcast.id} className="p-6 hover:shadow-lg transition-all duration-300 border border-slate-200 hover:border-blue-600">
                     <div className={`h-48 bg-gradient-to-br ${getGradientClass(index + 3)} rounded-lg mb-4 flex items-center justify-center relative overflow-hidden`}>
+                      <div className="absolute inset-0 bg-black/20"></div>
+                      <Headphones className="h-12 w-12 text-white relative z-10" />
+                      {podcast.duration && (
+                        <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm rounded px-2 py-1 text-white text-xs font-medium">
+                          {podcast.duration} min
+                        </div>
+                      )}
+                    </div>
+                    <h4 className="text-lg font-semibold mb-2">{podcast.title}</h4>
+                    <p className="text-slate-600 text-sm mb-4 line-clamp-3">
+                      {podcast.description}
+                    </p>
+                    <div className="flex justify-between items-center">
+                      <span className="text-2xl font-bold text-blue-600">
+                        {formatPrice(podcast.price)}
+                      </span>
+                      <Button onClick={() => handleBuyPodcast(podcast.id)} className="bg-amber-500 hover:bg-amber-600">
+                        <ShoppingCart className="mr-2 h-4 w-4" />
+                        Kup
+                      </Button>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Azure Category */}
+          {azurePodcasts && azurePodcasts.length > 0 && (
+            <div className="mb-16">
+              <div className="flex items-center mb-8">
+                <span className="text-4xl mr-4">☁️</span>
+                <h3 className="text-2xl font-bold">Microsoft Azure</h3>
+              </div>
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {azurePodcasts.map((podcast, index) => (
+                  <Card key={podcast.id} className="p-6 hover:shadow-lg transition-all duration-300 border border-slate-200 hover:border-blue-600">
+                    <div className={`h-48 bg-gradient-to-br ${getGradientClass(index + 6)} rounded-lg mb-4 flex items-center justify-center relative overflow-hidden`}>
+                      <div className="absolute inset-0 bg-black/20"></div>
+                      <Headphones className="h-12 w-12 text-white relative z-10" />
+                      {podcast.duration && (
+                        <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm rounded px-2 py-1 text-white text-xs font-medium">
+                          {podcast.duration} min
+                        </div>
+                      )}
+                    </div>
+                    <h4 className="text-lg font-semibold mb-2">{podcast.title}</h4>
+                    <p className="text-slate-600 text-sm mb-4 line-clamp-3">
+                      {podcast.description}
+                    </p>
+                    <div className="flex justify-between items-center">
+                      <span className="text-2xl font-bold text-blue-600">
+                        {formatPrice(podcast.price)}
+                      </span>
+                      <Button onClick={() => handleBuyPodcast(podcast.id)} className="bg-amber-500 hover:bg-amber-600">
+                        <ShoppingCart className="mr-2 h-4 w-4" />
+                        Kup
+                      </Button>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Architecture Category */}
+          {archPodcasts && archPodcasts.length > 0 && (
+            <div className="mb-16">
+              <div className="flex items-center mb-8">
+                <span className="text-4xl mr-4">🏗️</span>
+                <h3 className="text-2xl font-bold">Software Architecture</h3>
+              </div>
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {archPodcasts.map((podcast, index) => (
+                  <Card key={podcast.id} className="p-6 hover:shadow-lg transition-all duration-300 border border-slate-200 hover:border-blue-600">
+                    <div className={`h-48 bg-gradient-to-br ${getGradientClass(index + 9)} rounded-lg mb-4 flex items-center justify-center relative overflow-hidden`}>
                       <div className="absolute inset-0 bg-black/20"></div>
                       <Headphones className="h-12 w-12 text-white relative z-10" />
                       {podcast.duration && (

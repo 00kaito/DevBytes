@@ -1,14 +1,30 @@
-import type { Express } from "express";
+import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
+
+// Extend the session interface to include userId
+declare module 'express-session' {
+  interface SessionData {
+    userId?: string;
+  }
+}
 import Stripe from "stripe";
+import session from "express-session";
+import connectPg from "connect-pg-simple";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+import { AuthService } from "./authService";
+import { sendPasswordReset } from "./emailService";
 import {
   ObjectStorageService,
   ObjectNotFoundError,
 } from "./objectStorage";
 import { ObjectPermission } from "./objectAcl";
-import { insertPurchaseSchema } from "@shared/schema";
+import { 
+  insertPurchaseSchema, 
+  registerUserSchema, 
+  loginUserSchema,
+  type RegisterUser,
+  type LoginUser 
+} from "@shared/schema";
 
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
@@ -18,45 +34,254 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: "2025-07-30.basil",
 });
 
-export async function registerRoutes(app: Express): Promise<Server> {
-  // Auth middleware
-  await setupAuth(app);
+// Middleware for checking if user is authenticated
+const isAuthenticated = (req: any, res: any, next: any) => {
+  if (req.session?.userId) {
+    next();
+  } else {
+    res.status(401).json({ message: "Unauthorized" });
+  }
+};
 
-  // Auth routes
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+// Middleware for checking if user is admin
+const isAdmin = async (req: any, res: any, next: any) => {
+  try {
+    if (!req.session?.userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    const user = await storage.getUser(req.session.userId);
+    if (!user || !user.isAdmin) {
+      return res.status(403).json({ message: "Admin access required" });
+    }
+    
+    next();
+  } catch (error) {
+    console.error("Error checking admin status:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export async function registerRoutes(app: Express): Promise<Server> {
+  // Session setup
+  const PostgresSessionStore = connectPg(session);
+  const sessionStore = new PostgresSessionStore({
+    conString: process.env.DATABASE_URL,
+    createTableIfMissing: false, // Don't try to create table, it already exists
+  });
+
+  app.set("trust proxy", 1);
+  app.use(
+    session({
+      store: sessionStore,
+      secret: process.env.SESSION_SECRET || "dev-secret-change-in-production",
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        secure: false, // Set to true in production with HTTPS
+        httpOnly: true,
+        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      },
+    })
+  );
+
+  // Registration endpoint
+  app.post('/api/register', async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
-      res.json(user);
-    } catch (error) {
-      console.error("Error fetching user:", error);
-      res.status(500).json({ message: "Failed to fetch user" });
+      const validatedData: RegisterUser = registerUserSchema.parse(req.body);
+      
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmail(validatedData.email);
+      if (existingUser) {
+        return res.status(400).json({ message: "Użytkownik z tym emailem już istnieje" });
+      }
+
+      // Hash password
+      const passwordHash = await AuthService.hashPassword(validatedData.password);
+
+      // Create user with verified email
+      const user = await storage.createUser({
+        email: validatedData.email,
+        passwordHash,
+        firstName: validatedData.firstName,
+        lastName: validatedData.lastName,
+        emailVerificationToken: null,
+        emailVerificationExpires: null,
+        isEmailVerified: true,
+      });
+
+      res.status(201).json({ 
+        message: "Konto zostało utworzone pomyślnie. Możesz się teraz zalogować.",
+        userId: user.id
+      });
+    } catch (error: any) {
+      console.error("Registration error:", error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ 
+          message: "Nieprawidłowe dane", 
+          errors: error.errors 
+        });
+      }
+      res.status(500).json({ message: "Błąd podczas rejestracji" });
     }
   });
 
-  // Registration route (simple version - in production use proper auth)
-  app.post('/api/register', async (req, res) => {
+  // Logout endpoint
+  app.post('/api/logout', (req: any, res) => {
+    req.session.destroy((err: any) => {
+      if (err) {
+        console.error("Logout error:", err);
+        return res.status(500).json({ message: "Błąd podczas wylogowania" });
+      }
+      res.clearCookie('connect.sid');
+      res.json({ message: "Wylogowano pomyślnie" });
+    });
+  });
+
+  // Also handle GET logout for compatibility
+  app.get('/api/logout', (req: any, res) => {
+    req.session.destroy((err: any) => {
+      if (err) {
+        console.error("Logout error:", err);
+        return res.status(500).json({ message: "Błąd podczas wylogowania" });
+      }
+      res.clearCookie('connect.sid');
+      res.redirect('/');
+    });
+  });
+
+  // Login endpoint
+  app.post('/api/login', async (req, res) => {
     try {
-      const { email, firstName, lastName, password } = req.body;
+      const validatedData: LoginUser = loginUserSchema.parse(req.body);
       
-      // Check if user already exists
-      const existingUser = await storage.getUserByEmail(email);
-      if (existingUser) {
-        return res.status(400).json({ message: "User already exists" });
+      // Find user by email
+      const user = await storage.getUserByEmail(validatedData.email);
+      if (!user) {
+        return res.status(401).json({ message: "Nieprawidłowy email lub hasło" });
       }
 
-      // In a real app, you'd hash the password here
-      const user = await storage.createUser({
-        email,
-        firstName,
-        lastName,
-        // Note: This is a simplified registration - in production use proper password hashing
+      // Verify password
+      const passwordValid = await AuthService.verifyPassword(validatedData.password, user.passwordHash!);
+      if (!passwordValid) {
+        return res.status(401).json({ message: "Nieprawidłowy email lub hasło" });
+      }
+
+      // Create session
+      req.session.userId = user.id;
+      
+      // Return user data (without password hash)
+      const { passwordHash, emailVerificationToken, passwordResetToken, ...userResponse } = user;
+      res.json(userResponse);
+    } catch (error: any) {
+      console.error("Login error:", error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ 
+          message: "Nieprawidłowe dane", 
+          errors: error.errors 
+        });
+      }
+      res.status(500).json({ message: "Błąd podczas logowania" });
+    }
+  });
+
+  // Logout endpoint
+  app.post('/api/logout', (req: any, res) => {
+    req.session.destroy((err: any) => {
+      if (err) {
+        console.error("Logout error:", err);
+        return res.status(500).json({ message: "Błąd podczas wylogowywania" });
+      }
+      res.clearCookie('connect.sid');
+      res.json({ message: "Wylogowano pomyślnie" });
+    });
+  });
+
+  // Get current user endpoint
+  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.session.userId);
+      if (!user) {
+        return res.status(404).json({ message: "Użytkownik nie znaleziony" });
+      }
+      
+      // Return user data (without sensitive fields)
+      const { passwordHash, emailVerificationToken, passwordResetToken, ...userResponse } = user;
+      res.json(userResponse);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ message: "Błąd podczas pobierania danych użytkownika" });
+    }
+  });
+
+
+  // Password reset request endpoint
+  app.post('/api/forgot-password', async (req, res) => {
+    try {
+      const { email } = req.body;
+      if (!email) {
+        return res.status(400).json({ message: "Email jest wymagany" });
+      }
+
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        // Don't reveal if email exists
+        return res.json({ 
+          message: "Jeśli email istnieje w naszej bazie, wysłaliśmy link resetowania hasła." 
+        });
+      }
+
+      const { token: resetToken, expires: resetExpires } = AuthService.generatePasswordResetToken();
+      
+      // Update user with reset token
+      await storage.updateUser(user.id, {
+        passwordResetToken: resetToken,
+        passwordResetExpires: resetExpires,
       });
 
-      res.json({ message: "User created successfully", userId: user.id });
+      // Send reset email
+      const baseUrl = `${req.protocol}://${req.get('host')}`;
+      const emailSent = await sendPasswordReset({
+        to: user.email!,
+        firstName: user.firstName || 'Użytkowniku',
+        resetToken,
+        baseUrl,
+      });
+
+      if (!emailSent) {
+        console.error('Failed to send password reset email');
+      }
+
+      res.json({ 
+        message: "Jeśli email istnieje w naszej bazie, wysłaliśmy link resetowania hasła." 
+      });
     } catch (error) {
-      console.error("Error creating user:", error);
-      res.status(500).json({ message: "Failed to create user" });
+      console.error("Password reset request error:", error);
+      res.status(500).json({ message: "Błąd podczas wysyłania emaila resetowania hasła" });
+    }
+  });
+
+  // Password reset endpoint
+  app.post('/api/reset-password', async (req, res) => {
+    try {
+      const { token, password } = req.body;
+      if (!token || !password) {
+        return res.status(400).json({ message: "Token i nowe hasło są wymagane" });
+      }
+
+      if (password.length < 8) {
+        return res.status(400).json({ message: "Hasło musi mieć co najmniej 8 znaków" });
+      }
+
+      const result = await AuthService.resetPassword(token, password);
+      if (result.success) {
+        res.json({ message: result.message });
+      } else {
+        res.status(400).json({ message: result.message });
+      }
+    } catch (error) {
+      console.error("Password reset error:", error);
+      res.status(500).json({ message: "Błąd podczas resetowania hasła" });
     }
   });
 
@@ -114,10 +339,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Admin routes
-  app.get("/api/admin/podcasts", isAuthenticated, async (req: any, res) => {
+  // Admin routes (protected)
+  app.get("/api/admin/podcasts", isAuthenticated, isAdmin, async (req, res) => {
     try {
-      // Simple admin check - in production, you'd want proper role-based access
       const podcasts = await storage.getAllPodcasts();
       res.json(podcasts);
     } catch (error) {
@@ -126,17 +350,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/admin/podcasts", isAuthenticated, async (req: any, res) => {
+  app.post("/api/admin/podcasts", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const podcast = await storage.createPodcast(req.body);
-      res.json(podcast);
+      res.status(201).json(podcast);
     } catch (error) {
       console.error("Error creating podcast:", error);
       res.status(500).json({ message: "Failed to create podcast" });
     }
   });
 
-  app.put("/api/admin/podcasts/:id", isAuthenticated, async (req: any, res) => {
+  app.put("/api/admin/podcasts/:id", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const podcast = await storage.updatePodcast(req.params.id, req.body);
       if (!podcast) {
@@ -149,7 +373,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/admin/podcasts/:id", isAuthenticated, async (req: any, res) => {
+  app.delete("/api/admin/podcasts/:id", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const deleted = await storage.deletePodcast(req.params.id);
       if (!deleted) {
@@ -166,7 +390,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/create-payment-intent", isAuthenticated, async (req: any, res) => {
     try {
       const { podcastId } = req.body;
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId;
 
       // Check if already purchased
       const existingPurchase = await storage.checkUserPurchase(userId, podcastId);
@@ -198,7 +422,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/purchases", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId;
       const purchaseData = insertPurchaseSchema.parse({
         ...req.body,
         userId,
@@ -223,7 +447,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // User library routes
   app.get("/api/user/purchases", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId;
       const purchases = await storage.getUserPurchases(userId);
       res.json(purchases);
     } catch (error) {
@@ -234,7 +458,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Protected audio file serving
   app.get("/objects/:objectPath(*)", isAuthenticated, async (req: any, res) => {
-    const userId = req.user?.claims?.sub;
+    const userId = req.session.userId;
     const objectStorageService = new ObjectStorageService();
     
     try {

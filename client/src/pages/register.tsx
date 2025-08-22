@@ -1,122 +1,122 @@
-import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
-import { Link } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Link, useLocation } from "wouter";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { useAuth } from "@/hooks/useAuth";
+import { registerUserSchema, type RegisterUser } from "@shared/schema";
 import { z } from "zod";
-import { Headphones, Mail, User, ArrowLeft, CheckCircle } from "lucide-react";
 
-const registerSchema = z.object({
-  email: z.string().email("Podaj prawidłowy adres email"),
-  firstName: z.string().min(2, "Imię musi mieć co najmniej 2 znaki"),
-  lastName: z.string().min(2, "Nazwisko musi mieć co najmniej 2 znaki"),
-  password: z.string().min(8, "Hasło musi mieć co najmniej 8 znaków"),
+const registerFormSchema = registerUserSchema.extend({
   confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Hasła nie są identyczne",
   path: ["confirmPassword"],
 });
 
-type RegisterFormData = z.infer<typeof registerSchema>;
+type RegisterFormData = z.infer<typeof registerFormSchema>;
 
 export default function Register() {
-  const { toast } = useToast();
-  const [isRegistered, setIsRegistered] = useState(false);
+  const [, setLocation] = useLocation();
+  const { user, isLoading, registerMutation } = useAuth();
+
+  // Redirect if already authenticated
+  if (!isLoading && user) {
+    setLocation("/");
+    return null;
+  }
 
   const form = useForm<RegisterFormData>({
-    resolver: zodResolver(registerSchema),
+    resolver: zodResolver(registerFormSchema),
     defaultValues: {
-      email: "",
       firstName: "",
       lastName: "",
+      email: "",
       password: "",
       confirmPassword: "",
     },
   });
 
-  const registerMutation = useMutation({
-    mutationFn: async (data: Omit<RegisterFormData, 'confirmPassword'>) => {
-      const response = await apiRequest("POST", "/api/register", data);
-      return response.json();
-    },
-    onSuccess: () => {
-      setIsRegistered(true);
-      toast({
-        title: "Rejestracja pomyślna",
-        description: "Konto zostało utworzone. Możesz się teraz zalogować.",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Błąd rejestracji",
-        description: error.message || "Nie udało się utworzyć konta",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const onSubmit = (data: RegisterFormData) => {
-    const { confirmPassword, ...registerData } = data;
-    registerMutation.mutate(registerData);
+  const handleSubmit = (data: RegisterFormData) => {
+    const registerData: RegisterUser = {
+      firstName: data.firstName,
+      lastName: data.lastName,
+      email: data.email,
+      password: data.password,
+    };
+    
+    registerMutation.mutate(registerData, {
+      onSuccess: () => {
+        setLocation("/");
+      },
+    });
   };
 
-  if (isRegistered) {
+  if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center px-4 sm:px-6 lg:px-8">
-        <Card className="w-full max-w-md p-8 text-center">
-          <CheckCircle className="h-16 w-16 text-green-600 mx-auto mb-6" />
-          <h2 className="text-2xl font-bold text-slate-900 mb-4">
-            Rejestracja zakończona pomyślnie!
-          </h2>
-          <p className="text-slate-600 mb-6">
-            Twoje konto zostało utworzone. Możesz się teraz zalogować i rozpocząć naukę z naszymi podcastami.
-          </p>
-          <div className="space-y-3">
-            <Button
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-              onClick={() => window.location.href = '/api/login'}
-            >
-              Zaloguj się
-            </Button>
-            <Link href="/">
-              <Button variant="outline" className="w-full">
-                Powrót do strony głównej
-              </Button>
-            </Link>
-          </div>
-        </Card>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center px-4 sm:px-6 lg:px-8">
-      <Card className="w-full max-w-md p-8">
-        <div className="text-center mb-8">
-          <Headphones className="h-12 w-12 text-blue-600 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-slate-900">Utwórz konto</h2>
-          <p className="text-slate-600 mt-2">
-            Dołącz do społeczności programistów uczących się przez podcasty
-          </p>
-        </div>
-
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 px-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl font-bold">Załóż konto</CardTitle>
+          <CardDescription>
+            Dołącz do społeczności programistów i zdobądź dostęp do ekskluzywnych podcastów
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="firstName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Imię</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Jan" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="lastName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nazwisko</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Kowalski" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
               <FormField
                 control={form.control}
-                name="firstName"
+                name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Imię</FormLabel>
+                    <FormLabel>Adres email</FormLabel>
                     <FormControl>
-                      <Input {...field} />
+                      <Input type="email" placeholder="jan@example.com" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -124,91 +124,48 @@ export default function Register() {
               />
               <FormField
                 control={form.control}
-                name="lastName"
+                name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Nazwisko</FormLabel>
+                    <FormLabel>Hasło</FormLabel>
                     <FormControl>
-                      <Input {...field} />
+                      <Input type="password" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Adres email</FormLabel>
-                  <FormControl>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
-                      <Input {...field} className="pl-10" type="email" />
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Hasło</FormLabel>
-                  <FormControl>
-                    <Input {...field} type="password" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="confirmPassword"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Potwierdź hasło</FormLabel>
-                  <FormControl>
-                    <Input {...field} type="password" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <Button
-              type="submit"
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-              disabled={registerMutation.isPending}
-            >
-              {registerMutation.isPending ? "Tworzenie konta..." : "Utwórz konto"}
-            </Button>
-          </form>
-        </Form>
-
-        <div className="mt-6 text-center space-y-3">
-          <p className="text-slate-600">
-            Masz już konto?{" "}
-            <button
-              onClick={() => window.location.href = '/api/login'}
-              className="text-blue-600 hover:text-blue-700 font-medium"
-            >
-              Zaloguj się
-            </button>
-          </p>
-          <Link href="/">
-            <Button variant="ghost" className="flex items-center text-slate-600 hover:text-slate-800">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Powrót do strony głównej
-            </Button>
-          </Link>
-        </div>
+              <FormField
+                control={form.control}
+                name="confirmPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Potwierdź hasło</FormLabel>
+                    <FormControl>
+                      <Input type="password" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button 
+                type="submit" 
+                className="w-full" 
+                disabled={registerMutation.isPending}
+              >
+                {registerMutation.isPending ? "Tworzenie konta..." : "Utwórz konto"}
+              </Button>
+            </form>
+          </Form>
+          <div className="mt-6 text-center">
+            <p className="text-sm text-gray-600">
+              Masz już konto?{" "}
+              <Link href="/login" className="text-blue-600 hover:underline font-medium">
+                Zaloguj się
+              </Link>
+            </p>
+          </div>
+        </CardContent>
       </Card>
     </div>
   );

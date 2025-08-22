@@ -23,14 +23,21 @@ export const sessions = pgTable(
   (table) => [index("IDX_session_expire").on(table.expire)],
 );
 
-// User storage table (required for Replit Auth)
+// User storage table with email/password authentication
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  email: varchar("email").unique(),
+  email: varchar("email").unique().notNull(),
+  passwordHash: varchar("password_hash").notNull(),
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
   stripeCustomerId: varchar("stripe_customer_id"),
+  isAdmin: boolean("is_admin").default(false),
+  isEmailVerified: boolean("is_email_verified").default(false),
+  emailVerificationToken: varchar("email_verification_token"),
+  emailVerificationExpires: timestamp("email_verification_expires"),
+  passwordResetToken: varchar("password_reset_token"),
+  passwordResetExpires: timestamp("password_reset_expires"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -107,6 +114,20 @@ export const insertUserSchema = createInsertSchema(users).pick({
   profileImageUrl: true,
 });
 
+// Registration schema for new users
+export const registerUserSchema = z.object({
+  email: z.string().email("Podaj prawidłowy adres email"),
+  password: z.string().min(8, "Hasło musi mieć co najmniej 8 znaków"),
+  firstName: z.string().min(2, "Imię musi mieć co najmniej 2 znaki"),
+  lastName: z.string().min(2, "Nazwisko musi mieć co najmniej 2 znaki"),
+});
+
+// Login schema
+export const loginUserSchema = z.object({
+  email: z.string().email("Podaj prawidłowy adres email"),
+  password: z.string().min(1, "Hasło jest wymagane"),
+});
+
 export const insertCategorySchema = createInsertSchema(categories).omit({
   id: true,
   createdAt: true,
@@ -126,6 +147,8 @@ export const insertPurchaseSchema = createInsertSchema(purchases).omit({
 // Types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
+export type RegisterUser = z.infer<typeof registerUserSchema>;
+export type LoginUser = z.infer<typeof loginUserSchema>;
 export type Category = typeof categories.$inferSelect;
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
 export type Podcast = typeof podcasts.$inferSelect;
