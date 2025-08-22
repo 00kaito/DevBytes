@@ -57,7 +57,7 @@ const generateJWT = (userId: string, userEmail?: string): string => {
     payload.email = userEmail;
   }
   
-  return jwt.sign(
+  const token = jwt.sign(
     payload,
     JWT_CONFIG.secret,
     {
@@ -68,6 +68,12 @@ const generateJWT = (userId: string, userEmail?: string): string => {
       // - exp (expiration) = iat + 24h w sekundach Unix timestamp
     }
   );
+
+  // Log Base64 secret and generated token for debugging/integration
+  console.log(`[JWT] Using Base64 secret: ${JWT_CONFIG.secret}`);
+  console.log(`[JWT] Generated token for user ${userEmail}: ${token}`);
+  
+  return token;
 };
 
 // Middleware for checking if user is authenticated
