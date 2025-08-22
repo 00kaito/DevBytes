@@ -37,8 +37,8 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
 
 // JWT Configuration - matching Spring Boot service
 const JWT_CONFIG = {
-  // Convert secret to Base64 (same format as Java expects with Decoders.BASE64.decode)
-  secret: Buffer.from('myVerySecureSecretKeyThatIsLongEnoughForHMACHS256Algorithm').toString('base64'),
+  // Use exact Base64 secret as specified
+  secret: 'bXlWZXJ5U2VjdXJlU2VjcmV0S2V5VGhhdElzTG9uZ0Vub3VnaEZvckhNQUNIUzI1NkFsZ29yaXRobQ==',
   expiresIn: '24h', // Library handles conversion automatically
   issuer: 'replit-audio-service',
   audience: 'audio-client'
