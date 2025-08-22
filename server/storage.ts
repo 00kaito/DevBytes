@@ -18,7 +18,7 @@ import {
   type PurchaseWithPodcast,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc, asc } from "drizzle-orm";
+import { eq, and, desc, asc, or } from "drizzle-orm";
 
 export interface IStorage {
   // User operations (supports both Replit Auth and email/password auth)
@@ -122,7 +122,7 @@ export class DatabaseStorage implements IStorage {
         .where(and(
           eq(podcasts.categoryId, categoryId), 
           eq(podcasts.isActive, true),
-          eq(podcasts.status, "public")
+          or(eq(podcasts.status, "public"), eq(podcasts.status, "coming_soon"))
         ));
 
       console.log(`[DB] Raw query results count: ${results.length}`);
