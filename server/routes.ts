@@ -35,29 +35,38 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: "2025-07-30.basil",
 });
 
-// JWT Configuration - matching external service
+// JWT Configuration - matching Spring Boot service
 const JWT_CONFIG = {
+  // Use raw secret (same as in Spring properties)
   secret: 'myVerySecureSecretKeyThatIsLongEnoughForHMACHS256Algorithm',
-  expiresIn: '24h', // Use string format instead of milliseconds
+  expiresIn: '24h', // Library handles conversion automatically
   issuer: 'replit-audio-service',
   audience: 'audio-client'
 };
 
 // Function to generate JWT token
-const generateJWT = (userId: string, userEmail: string): string => {
-  const now = Math.floor(Date.now() / 1000); // Current time in seconds (Unix timestamp)
-  const expiration = now + (24 * 60 * 60); // Add 24 hours in seconds
+const generateJWT = (userId: string, userEmail?: string): string => {
+  const payload: any = {
+    sub: userId,
+    iss: JWT_CONFIG.issuer,
+    aud: JWT_CONFIG.audience
+  };
+  
+  // Add email only if provided
+  if (userEmail) {
+    payload.email = userEmail;
+  }
   
   return jwt.sign(
-    { 
-      sub: userId,
-      email: userEmail,
-      iat: now,
-      exp: expiration,
-      aud: JWT_CONFIG.audience,
-      iss: JWT_CONFIG.issuer
-    },
-    JWT_CONFIG.secret
+    payload,
+    JWT_CONFIG.secret,
+    {
+      expiresIn: JWT_CONFIG.expiresIn,
+      algorithm: 'HS256'
+      // Biblioteka automatycznie doda:
+      // - iat (issued at) = aktualny czas w sekundach Unix timestamp
+      // - exp (expiration) = iat + 24h w sekundach Unix timestamp
+    }
   );
 };
 
