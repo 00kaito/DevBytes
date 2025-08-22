@@ -1,5 +1,6 @@
 import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
+import jwt from "jsonwebtoken";
 
 // Extend the session interface to include userId
 declare module 'express-session' {
@@ -33,6 +34,30 @@ if (!process.env.STRIPE_SECRET_KEY) {
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: "2025-07-30.basil",
 });
+
+// JWT Configuration - matching external service
+const JWT_CONFIG = {
+  secret: 'myVerySecureSecretKeyThatIsLongEnoughForHMACHS256Algorithm',
+  expiresIn: 86400000, // 86400000ms = 24 hours
+  issuer: 'replit-audio-service',
+  audience: 'audio-client'
+};
+
+// Function to generate JWT token
+const generateJWT = (userId: string, userEmail: string): string => {
+  return jwt.sign(
+    { 
+      sub: userId,
+      email: userEmail
+    },
+    JWT_CONFIG.secret,
+    { 
+      expiresIn: JWT_CONFIG.expiresIn,
+      issuer: JWT_CONFIG.issuer,
+      audience: JWT_CONFIG.audience
+    }
+  );
+};
 
 // Middleware for checking if user is authenticated
 const isAuthenticated = (req: any, res: any, next: any) => {
@@ -171,9 +196,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create session
       req.session.userId = user.id;
       
-      // Return user data (without password hash)
+      // Generate JWT token
+      const jwtToken = generateJWT(user.id, user.email);
+      
+      // Set JWT token in response header
+      res.setHeader('Authorization', `Bearer ${jwtToken}`);
+      
+      // Return user data (without password hash) and include token
       const { passwordHash, emailVerificationToken, passwordResetToken, ...userResponse } = user;
-      res.json(userResponse);
+      res.json({
+        ...userResponse,
+        token: jwtToken
+      });
     } catch (error: any) {
       console.error("Login error:", error);
       if (error.name === 'ZodError') {
