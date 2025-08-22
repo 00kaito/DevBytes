@@ -249,11 +249,19 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updatePodcast(id: string, podcastData: Partial<InsertPodcast>): Promise<Podcast | undefined> {
+    console.log(`[DB UPDATE] Updating podcast ${id} with:`, {
+      podcastData,
+      hasStatus: 'status' in podcastData,
+      statusValue: podcastData.status
+    });
+    
     const [podcast] = await db
       .update(podcasts)
       .set({ ...podcastData, updatedAt: new Date() })
       .where(eq(podcasts.id, id))
       .returning();
+      
+    console.log(`[DB UPDATE] After update, podcast status: ${podcast?.status}`);
     return podcast;
   }
 

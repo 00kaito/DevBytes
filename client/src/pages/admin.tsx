@@ -245,6 +245,14 @@ export default function Admin() {
   };
 
   const startEdit = (podcast: Podcast) => {
+    console.log('[EDIT] Starting edit with podcast data:', {
+      id: podcast.id,
+      title: podcast.title,
+      status: podcast.status,
+      hasStatus: 'status' in podcast,
+      statusValue: podcast.status
+    });
+    
     setEditingPodcast(podcast);
     form.reset({
       title: podcast.title,
@@ -257,6 +265,8 @@ export default function Admin() {
       status: podcast.status || "draft",
       isActive: podcast.isActive || true,
     });
+    
+    console.log('[EDIT] Form reset with values:', form.getValues());
   };
 
   const formatPrice = (priceInGrosze: number) => {
