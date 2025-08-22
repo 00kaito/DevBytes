@@ -210,10 +210,10 @@ export default function Landing() {
                 {javaPodcasts.map((podcast, index) => (
                   <Card key={podcast.id} className="p-6 hover:shadow-lg transition-all duration-300 border border-slate-200 hover:border-blue-600">
                     <div className="mb-4">
-                      {podcast.imageUrl ? (
+                      {podcast.imageObjectPath ? (
                         <div className="w-full h-32 mb-4 rounded-lg overflow-hidden">
                           <img
-                            src={podcast.imageUrl}
+                            src={`/public-objects/${podcast.imageObjectPath}`}
                             alt={podcast.title}
                             className="w-full h-full object-cover"
                           />
@@ -277,10 +277,10 @@ export default function Landing() {
                 {jsPodcasts.map((podcast, index) => (
                   <Card key={podcast.id} className="p-6 hover:shadow-lg transition-all duration-300 border border-slate-200 hover:border-blue-600">
                     <div className="mb-4">
-                      {podcast.imageUrl ? (
+                      {podcast.imageObjectPath ? (
                         <div className="w-full h-32 mb-4 rounded-lg overflow-hidden">
                           <img
-                            src={podcast.imageUrl}
+                            src={`/public-objects/${podcast.imageObjectPath}`}
                             alt={podcast.title}
                             className="w-full h-full object-cover"
                           />
@@ -344,10 +344,10 @@ export default function Landing() {
                 {azurePodcasts.map((podcast, index) => (
                   <Card key={podcast.id} className="p-6 hover:shadow-lg transition-all duration-300 border border-slate-200 hover:border-blue-600">
                     <div className="mb-4">
-                      {podcast.imageUrl ? (
+                      {podcast.imageObjectPath ? (
                         <div className="w-full h-32 mb-4 rounded-lg overflow-hidden">
                           <img
-                            src={podcast.imageUrl}
+                            src={`/public-objects/${podcast.imageObjectPath}`}
                             alt={podcast.title}
                             className="w-full h-full object-cover"
                           />
@@ -412,10 +412,10 @@ export default function Landing() {
                   <Card key={podcast.id} className="p-6 hover:shadow-lg transition-all duration-300 border border-slate-200 hover:border-blue-600 cursor-pointer"
                     onClick={() => window.location.href = `/product/${podcast.slug}`}>
                     <div className="mb-4">
-                      {podcast.imageUrl ? (
+                      {podcast.imageObjectPath ? (
                         <div className="w-full h-32 mb-4 rounded-lg overflow-hidden">
                           <img
-                            src={podcast.imageUrl}
+                            src={`/public-objects/${podcast.imageObjectPath}`}
                             alt={podcast.title}
                             className="w-full h-full object-cover"
                           />
