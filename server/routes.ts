@@ -199,6 +199,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Generate JWT token
       const jwtToken = generateJWT(user.id, user.email);
       
+      // Log JWT token to console
+      console.log(`[JWT] Generated token for user ${user.email}:`, jwtToken);
+      
       // Set JWT token in response header
       res.setHeader('Authorization', `Bearer ${jwtToken}`);
       
