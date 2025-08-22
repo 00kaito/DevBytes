@@ -178,6 +178,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Login endpoint
   app.post('/api/login', async (req, res) => {
+    console.log('[DEBUG] Login endpoint called with:', req.body);
     try {
       const validatedData: LoginUser = loginUserSchema.parse(req.body);
       
