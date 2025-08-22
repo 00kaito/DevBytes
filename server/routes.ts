@@ -67,7 +67,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const PostgresSessionStore = connectPg(session);
   const sessionStore = new PostgresSessionStore({
     conString: process.env.DATABASE_URL,
-    createTableIfMissing: false, // Don't try to create table, it already exists
+    createTableIfMissing: true, // Don't try to create table, it already exists
   });
 
   app.set("trust proxy", 1);
