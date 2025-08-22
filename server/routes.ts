@@ -67,7 +67,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const PostgresSessionStore = connectPg(session);
   const sessionStore = new PostgresSessionStore({
     conString: process.env.DATABASE_URL,
-    createTableIfMissing: false, // Don't try to create table, it already exists
+    createTableIfMissing: true, // Don't try to create table, it already exists
   });
 
   app.set("trust proxy", 1);
@@ -288,13 +288,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Categories routes
   app.get("/api/categories", async (req, res) => {
     try {
+      console.log("=== CATEGORIES REQUEST DEBUG ===");
+      console.log("DATABASE_URL exists:", !!process.env.DATABASE_URL);
+      console.log("DATABASE_URL length:", process.env.DATABASE_URL?.length);
+      console.log("DATABASE_URL starts with:", process.env.DATABASE_URL?.substring(0, 15));
+      
+      console.log("Attempting to fetch categories...");
       const categories = await storage.getCategories();
+      console.log("Categories fetched successfully, count:", categories.length);
+      console.log("Sample category:", categories[0] ? JSON.stringify(categories[0]) : "No categories");
+      
       res.json(categories);
     } catch (error) {
-      console.error("Error fetching categories:", error);
-      res.status(500).json({ message: "Failed to fetch categories" });
+      console.error("=== CATEGORIES ERROR DEBUG ===");
+      console.error("Error type:", error.constructor.name);
+      console.error("Error message:", error.message);
+      console.error("Error code:", error.code);
+      console.error("Full error:", error);
+      console.error("Stack trace:", error.stack);
+      console.error("================================");
+      res.status(500).json({ message: "Failed to fetch categories", error: error.message });
     }
   });
+
 
   // Podcasts routes
   app.get("/api/categories/:slug/podcasts", async (req, res) => {

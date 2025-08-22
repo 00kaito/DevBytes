@@ -1,3 +1,5 @@
+import { config } from "dotenv";
+config(); 
 import { db } from "./db";
 import { categories, podcasts } from "@shared/schema";
 

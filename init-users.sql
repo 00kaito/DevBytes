@@ -1,0 +1,63 @@
+INSERT INTO users (
+    email,
+    password_hash,
+    first_name,
+    last_name,
+    profile_image_url,
+    stripe_customer_id,
+    is_admin,
+    is_email_verified,
+    email_verification_token,
+    email_verification_expires,
+    password_reset_token,
+    password_reset_expires,
+    created_at,
+    updated_at
+) VALUES (
+    'admin@admin.com',
+    '$2b$12$7ZtnjnRP9YAz76Va.bQr5urV.dM6nv8StcfzrbShXztF4mNVZZseu',
+    'admin',
+    'admin',
+    'https://example.com/image.jpg',
+    'cus_1234567890',
+    TRUE,
+    TRUE,
+    'verification-token-123',
+    '2024-03-21 12:00:00+02',
+    'reset-token-456',
+    '2024-03-21 12:00:00+02',
+    '2024-03-21 12:00:00+02',
+    '2024-03-21 12:00:00+02'
+);
+INSERT INTO users (
+    email,
+    password_hash,
+    first_name,
+    last_name,
+    profile_image_url,
+    stripe_customer_id,
+    is_admin,
+    is_email_verified,
+    email_verification_token,
+    email_verification_expires,
+    password_reset_token,
+    password_reset_expires,
+    created_at,
+    updated_at
+) VALUES (
+    'test@test.com',
+    '$2b$12$7ZtnjnRP9YAz76Va.bQr5urV.dM6nv8StcfzrbShXztF4mNVZZseu',
+    'test',
+    'test',
+    'https://example.com/image.jpg',
+    'cus_1234567890',
+    FALSE,
+    TRUE,
+    'verification-token-123',
+    '2024-03-21 12:00:00+02',
+    'reset-token-456',
+    '2024-03-21 12:00:00+02',
+    '2024-03-21 12:00:00+02',
+    '2024-03-21 12:00:00+02'
+);
+
