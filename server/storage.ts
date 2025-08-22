@@ -121,7 +121,6 @@ export class DatabaseStorage implements IStorage {
         .leftJoin(categories, eq(podcasts.categoryId, categories.id))
         .where(and(
           eq(podcasts.categoryId, categoryId), 
-          eq(podcasts.isActive, true),
           or(eq(podcasts.status, "public"), eq(podcasts.status, "coming_soon"))
         ));
 
@@ -156,7 +155,10 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(podcasts)
       .leftJoin(categories, eq(podcasts.categoryId, categories.id))
-      .where(and(eq(podcasts.slug, slug), eq(podcasts.isActive, true)))
+      .where(and(
+        eq(podcasts.slug, slug), 
+        or(eq(podcasts.status, "public"), eq(podcasts.status, "coming_soon"))
+      ))
       .limit(1);
 
     if (result.length === 0) return null;

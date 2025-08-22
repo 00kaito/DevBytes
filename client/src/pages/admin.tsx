@@ -44,7 +44,6 @@ const podcastFormSchema = z.object({
   categoryId: z.string().min(1, "Kategoria jest wymagana"),
   imageObjectPath: z.string().optional(),
   status: z.enum(["draft", "public", "coming_soon"]),
-  isActive: z.boolean(),
 });
 
 type PodcastFormData = z.infer<typeof podcastFormSchema>;
@@ -122,7 +121,6 @@ export default function Admin() {
       categoryId: "",
       imageObjectPath: "",
       status: "draft",
-      isActive: true,
     },
   });
 
@@ -262,8 +260,7 @@ export default function Admin() {
       price: podcast.price,
       categoryId: podcast.categoryId,
       imageObjectPath: podcast.imageObjectPath || "",
-      status: podcast.status || "draft",
-      isActive: podcast.isActive || true,
+      status: (podcast.status as "draft" | "public" | "coming_soon") || "draft",
     });
     
     console.log('[EDIT] Form reset with values:', form.getValues());
@@ -389,7 +386,7 @@ export default function Admin() {
                           <FormLabel>Opis (HTML)</FormLabel>
                           <FormControl>
                             <SimpleEditor
-                              value={field.value}
+                              value={field.value || ""}
                               onChange={field.onChange}
                               placeholder="Wprowadź opis produktu używając HTML..."
                             />
@@ -503,26 +500,6 @@ export default function Admin() {
                       )}
                     />
 
-                    <FormField
-                      control={form.control}
-                      name="isActive"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                          <FormControl>
-                            <Checkbox
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                          <div className="space-y-1 leading-none">
-                            <FormLabel>
-                              Podcast jest aktywny
-                            </FormLabel>
-                            <FormMessage />
-                          </div>
-                        </FormItem>
-                      )}
-                    />
 
                     <div className="flex justify-end space-x-4">
                       <Button
@@ -561,7 +538,6 @@ export default function Admin() {
                       <div className="flex space-x-6 text-sm text-slate-500">
                         <span>Czas: {podcast.duration} min</span>
                         <span>Cena: {formatPrice(podcast.price)}</span>
-                        <span>Status: {podcast.isActive ? "Aktywny" : "Nieaktywny"}</span>
                         <span>Stan: {podcast.status}</span>
                       </div>
                     </div>
@@ -654,7 +630,7 @@ export default function Admin() {
                       <FormLabel>Opis (HTML)</FormLabel>
                       <FormControl>
                         <SimpleEditor
-                          value={field.value}
+                          value={field.value || ""}
                           onChange={field.onChange}
                           placeholder="Wprowadź opis produktu używając HTML..."
                         />
@@ -768,26 +744,6 @@ export default function Admin() {
                   )}
                 />
 
-                <FormField
-                  control={form.control}
-                  name="isActive"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                      <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                      <div className="space-y-1 leading-none">
-                        <FormLabel>
-                          Podcast jest aktywny
-                        </FormLabel>
-                        <FormMessage />
-                      </div>
-                    </FormItem>
-                  )}
-                />
 
                 <div className="flex justify-end space-x-4">
                   <Button
