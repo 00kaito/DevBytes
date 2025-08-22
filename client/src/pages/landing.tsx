@@ -208,7 +208,11 @@ export default function Landing() {
               </div>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {javaPodcasts.map((podcast, index) => (
-                  <Card key={podcast.id} className="p-6 hover:shadow-lg transition-all duration-300 border border-slate-200 hover:border-blue-600">
+                  <Card 
+                    key={podcast.id} 
+                    className="p-6 hover:shadow-lg transition-all duration-300 border border-slate-200 hover:border-blue-600 cursor-pointer"
+                    onClick={() => window.location.href = `/product/${podcast.slug}`}
+                  >
                     <div className="mb-4">
                       {podcast.imageObjectPath ? (
                         <div className="w-full h-32 mb-4 rounded-lg overflow-hidden">
@@ -241,7 +245,11 @@ export default function Landing() {
                     </div>
                     <div className="flex flex-col gap-2">
                       <Link href={`/product/${podcast.slug}`} className="w-full">
-                        <Button variant="outline" className="w-full">
+                        <Button 
+                          variant="outline" 
+                          className="w-full"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           Poznaj produkt
                         </Button>
                       </Link>
@@ -250,7 +258,13 @@ export default function Landing() {
                           Wkrótce dostępne
                         </Badge>
                       ) : podcast.status === "public" ? (
-                        <Button onClick={() => handleBuyPodcast(podcast.id)} className="bg-amber-500 hover:bg-amber-600 w-full">
+                        <Button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleBuyPodcast(podcast.id);
+                          }} 
+                          className="bg-amber-500 hover:bg-amber-600 w-full"
+                        >
                           <ShoppingCart className="mr-2 h-4 w-4" />
                           Kup
                         </Button>
@@ -275,7 +289,11 @@ export default function Landing() {
               </div>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {jsPodcasts.map((podcast, index) => (
-                  <Card key={podcast.id} className="p-6 hover:shadow-lg transition-all duration-300 border border-slate-200 hover:border-blue-600">
+                  <Card 
+                    key={podcast.id} 
+                    className="p-6 hover:shadow-lg transition-all duration-300 border border-slate-200 hover:border-blue-600 cursor-pointer"
+                    onClick={() => window.location.href = `/product/${podcast.slug}`}
+                  >
                     <div className="mb-4">
                       {podcast.imageObjectPath ? (
                         <div className="w-full h-32 mb-4 rounded-lg overflow-hidden">
@@ -308,7 +326,11 @@ export default function Landing() {
                     </div>
                     <div className="flex flex-col gap-2">
                       <Link href={`/product/${podcast.slug}`} className="w-full">
-                        <Button variant="outline" className="w-full">
+                        <Button 
+                          variant="outline" 
+                          className="w-full"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           Poznaj produkt
                         </Button>
                       </Link>
@@ -317,7 +339,13 @@ export default function Landing() {
                           Wkrótce dostępne
                         </Badge>
                       ) : podcast.status === "public" ? (
-                        <Button onClick={() => handleBuyPodcast(podcast.id)} className="bg-amber-500 hover:bg-amber-600 w-full">
+                        <Button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleBuyPodcast(podcast.id);
+                          }} 
+                          className="bg-amber-500 hover:bg-amber-600 w-full"
+                        >
                           <ShoppingCart className="mr-2 h-4 w-4" />
                           Kup
                         </Button>
@@ -342,7 +370,11 @@ export default function Landing() {
               </div>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {azurePodcasts.map((podcast, index) => (
-                  <Card key={podcast.id} className="p-6 hover:shadow-lg transition-all duration-300 border border-slate-200 hover:border-blue-600">
+                  <Card 
+                    key={podcast.id} 
+                    className="p-6 hover:shadow-lg transition-all duration-300 border border-slate-200 hover:border-blue-600 cursor-pointer"
+                    onClick={() => window.location.href = `/product/${podcast.slug}`}
+                  >
                     <div className="mb-4">
                       {podcast.imageObjectPath ? (
                         <div className="w-full h-32 mb-4 rounded-lg overflow-hidden">
@@ -375,7 +407,11 @@ export default function Landing() {
                     </div>
                     <div className="flex flex-col gap-2">
                       <Link href={`/product/${podcast.slug}`} className="w-full">
-                        <Button variant="outline" className="w-full">
+                        <Button 
+                          variant="outline" 
+                          className="w-full"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           Poznaj produkt
                         </Button>
                       </Link>
@@ -384,7 +420,13 @@ export default function Landing() {
                           Wkrótce dostępne
                         </Badge>
                       ) : podcast.status === "public" ? (
-                        <Button onClick={() => handleBuyPodcast(podcast.id)} className="bg-amber-500 hover:bg-amber-600 w-full">
+                        <Button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleBuyPodcast(podcast.id);
+                          }} 
+                          className="bg-amber-500 hover:bg-amber-600 w-full"
+                        >
                           <ShoppingCart className="mr-2 h-4 w-4" />
                           Kup
                         </Button>
