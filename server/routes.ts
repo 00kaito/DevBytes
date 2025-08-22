@@ -447,6 +447,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Podcast not found" });
       }
 
+      // Check if podcast is available for purchase
+      if (podcast.status !== "public") {
+        return res.status(400).json({ 
+          message: podcast.status === "coming_soon" 
+            ? "Podcast jest w przygotowaniu i nie jest jeszcze dostępny do kupienia" 
+            : "Podcast nie jest dostępny do kupienia"
+        });
+      }
+
       const paymentIntent = await stripe.paymentIntents.create({
         amount: podcast.price,
         currency: "pln",
