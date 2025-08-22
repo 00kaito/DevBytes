@@ -196,6 +196,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create session
       req.session.userId = user.id;
       
+      console.log(`[LOGIN] User authenticated: ${user.email}, generating JWT token...`);
+      
       // Generate JWT token
       const jwtToken = generateJWT(user.id, user.email);
       
@@ -207,6 +209,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Return user data (without password hash) and include token
       const { passwordHash, emailVerificationToken, passwordResetToken, ...userResponse } = user;
+      
+      console.log(`[LOGIN] Sending response with token for user: ${user.email}`);
+      
       res.json({
         ...userResponse,
         token: jwtToken
