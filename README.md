@@ -86,6 +86,13 @@ npm run db:push
 npm run dev
 ```
 
+*** LOKALNIE ***
+potrzebujesz jeszcze:
+npm install pg @types/pg
+npm install dotenv
+oraz zmiany z brancha: local_dev
+
+
 Aplikacja będzie dostępna na `http://localhost:5000`
 
 ## 📁 Struktura Projektu
