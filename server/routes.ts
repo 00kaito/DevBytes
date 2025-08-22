@@ -178,7 +178,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Login endpoint
   app.post('/api/login', async (req, res) => {
-    console.error('[DEBUG] Login endpoint called with:', req.body);
     try {
       const validatedData: LoginUser = loginUserSchema.parse(req.body);
       
@@ -197,21 +196,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create session
       req.session.userId = user.id;
       
-      console.error(`[LOGIN] User authenticated: ${user.email}, generating JWT token...`);
-      
       // Generate JWT token
       const jwtToken = generateJWT(user.id, user.email);
       
-      // Log JWT token to console
-      console.error(`[JWT] Generated token for user ${user.email}:`, jwtToken);
+      // Log JWT token to console for debugging integration with external app
+      console.log(`[JWT] Generated token for user ${user.email}:`, jwtToken);
       
       // Set JWT token in response header
       res.setHeader('Authorization', `Bearer ${jwtToken}`);
       
       // Return user data (without password hash) and include token
       const { passwordHash, emailVerificationToken, passwordResetToken, ...userResponse } = user;
-      
-      console.error(`[LOGIN] Sending response with token for user: ${user.email}`);
       
       res.json({
         ...userResponse,
