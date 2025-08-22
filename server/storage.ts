@@ -3,14 +3,17 @@ import {
   categories,
   podcasts,
   purchases,
-  type User,
+  waitlist,
   type UpsertUser,
+  type User,
   type Category,
   type InsertCategory,
   type Podcast,
   type InsertPodcast,
   type Purchase,
   type InsertPurchase,
+  type Waitlist,
+  type InsertWaitlist,
   type PodcastWithCategory,
   type PurchaseWithPodcast,
 } from "@shared/schema";
@@ -46,6 +49,10 @@ export interface IStorage {
   getUserPurchases(userId: string): Promise<PurchaseWithPodcast[]>;
   checkUserPurchase(userId: string, podcastId: string): Promise<Purchase | undefined>;
   getPurchasesByUser(userId: string): Promise<Purchase[]>;
+
+  // Waitlist operations
+  addToWaitlist(waitlistData: InsertWaitlist): Promise<Waitlist>;
+  checkWaitlistEntry(email: string, podcastId: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -104,26 +111,38 @@ export class DatabaseStorage implements IStorage {
     return category;
   }
 
-  async getPodcastsByCategory(categoryId: string): Promise<Podcast[]> {
-    return await db
+  async getPodcastsByCategory(categoryId: string): Promise<PodcastWithCategory[]> {
+    const results = await db
       .select()
       .from(podcasts)
-      .where(and(eq(podcasts.categoryId, categoryId), eq(podcasts.isActive, true)))
-      .orderBy(asc(podcasts.title));
+      .leftJoin(categories, eq(podcasts.categoryId, categories.id))
+      .where(and(
+        eq(podcasts.categoryId, categoryId), 
+        eq(podcasts.isActive, true),
+        eq(podcasts.status, "public")
+      ));
+
+    return results.map(result => ({
+      ...result.podcasts,
+      category: result.categories!,
+      imageUrl: result.podcasts.imageObjectPath ? `/public-objects/${result.podcasts.imageObjectPath}` : null,
+    }));
   }
 
-  async getPodcastBySlug(slug: string): Promise<PodcastWithCategory | undefined> {
-    const [result] = await db
+  async getPodcastBySlug(slug: string): Promise<PodcastWithCategory | null> {
+    const result = await db
       .select()
       .from(podcasts)
-      .innerJoin(categories, eq(podcasts.categoryId, categories.id))
-      .where(eq(podcasts.slug, slug));
-    
-    if (!result) return undefined;
-    
+      .leftJoin(categories, eq(podcasts.categoryId, categories.id))
+      .where(and(eq(podcasts.slug, slug), eq(podcasts.isActive, true)))
+      .limit(1);
+
+    if (result.length === 0) return null;
+
     return {
-      ...result.podcasts,
-      category: result.categories,
+      ...result[0].podcasts,
+      category: result[0].categories!,
+      imageUrl: result[0].podcasts.imageObjectPath ? `/public-objects/${result[0].podcasts.imageObjectPath}` : null,
     };
   }
 
@@ -133,9 +152,9 @@ export class DatabaseStorage implements IStorage {
       .from(podcasts)
       .innerJoin(categories, eq(podcasts.categoryId, categories.id))
       .where(eq(podcasts.id, id));
-    
+
     if (!result) return undefined;
-    
+
     return {
       ...result.podcasts,
       category: result.categories,
@@ -157,14 +176,6 @@ export class DatabaseStorage implements IStorage {
       .update(users)
       .set({ ...userData, updatedAt: new Date() })
       .where(eq(users.id, id))
-      .returning();
-    return user;
-  }
-
-  async createUser(userData: UpsertUser): Promise<User> {
-    const [user] = await db
-      .insert(users)
-      .values(userData)
       .returning();
     return user;
   }
@@ -237,6 +248,23 @@ export class DatabaseStorage implements IStorage {
       .from(purchases)
       .where(eq(purchases.userId, userId))
       .orderBy(desc(purchases.purchasedAt));
+  }
+
+  async addToWaitlist(waitlistData: InsertWaitlist): Promise<Waitlist> {
+    const [entry] = await db
+      .insert(waitlist)
+      .values(waitlistData)
+      .returning();
+    return entry;
+  }
+
+  async checkWaitlistEntry(email: string, podcastId: string): Promise<boolean> {
+    const result = await db
+      .select()
+      .from(waitlist)
+      .where(and(eq(waitlist.email, email), eq(waitlist.podcastId, podcastId)))
+      .limit(1);
+    return result.length > 0;
   }
 }
 

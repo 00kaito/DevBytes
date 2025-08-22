@@ -62,6 +62,8 @@ export const podcasts = pgTable("podcasts", {
   price: integer("price").notNull(), // in cents (Polish grosze)
   categoryId: varchar("category_id").notNull().references(() => categories.id),
   audioObjectPath: varchar("audio_object_path"), // path to audio file in object storage
+  imageObjectPath: varchar("image_object_path"), // path to podcast image in object storage
+  status: varchar("status", { length: 20 }).notNull().default("draft"), // draft, public, coming_soon
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -78,6 +80,14 @@ export const purchases = pgTable("purchases", {
   purchasedAt: timestamp("purchased_at").defaultNow(),
 });
 
+// Waitlist for coming soon podcasts
+export const waitlist = pgTable("waitlist", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  email: varchar("email").notNull(),
+  podcastId: varchar("podcast_id").notNull().references(() => podcasts.id),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Relations
 export const categoriesRelations = relations(categories, ({ many }) => ({
   podcasts: many(podcasts),
@@ -89,6 +99,7 @@ export const podcastsRelations = relations(podcasts, ({ one, many }) => ({
     references: [categories.id],
   }),
   purchases: many(purchases),
+  waitlistEntries: many(waitlist),
 }));
 
 export const usersRelations = relations(users, ({ many }) => ({
@@ -102,6 +113,13 @@ export const purchasesRelations = relations(purchases, ({ one }) => ({
   }),
   podcast: one(podcasts, {
     fields: [purchases.podcastId],
+    references: [podcasts.id],
+  }),
+}));
+
+export const waitlistRelations = relations(waitlist, ({ one }) => ({
+  podcast: one(podcasts, {
+    fields: [waitlist.podcastId],
     references: [podcasts.id],
   }),
 }));
@@ -144,6 +162,11 @@ export const insertPurchaseSchema = createInsertSchema(purchases).omit({
   purchasedAt: true,
 });
 
+export const insertWaitlistSchema = createInsertSchema(waitlist).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -155,6 +178,8 @@ export type Podcast = typeof podcasts.$inferSelect;
 export type InsertPodcast = z.infer<typeof insertPodcastSchema>;
 export type Purchase = typeof purchases.$inferSelect;
 export type InsertPurchase = z.infer<typeof insertPurchaseSchema>;
+export type Waitlist = typeof waitlist.$inferSelect;
+export type InsertWaitlist = z.infer<typeof insertWaitlistSchema>;
 
 // Extended types with relations
 export type PodcastWithCategory = Podcast & {

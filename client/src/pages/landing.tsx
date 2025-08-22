@@ -36,7 +36,7 @@ export default function Landing() {
   });
 
   const { loginMutation } = useAuth();
-  
+
   const handleLoginClick = () => {
     window.location.href = "/login";
   };
@@ -50,7 +50,7 @@ export default function Landing() {
   };
 
   const scrollToCategories = () => {
-    document.getElementById('categories')?.scrollIntoView({ 
+    document.getElementById('categories')?.scrollIntoView({
       behavior: 'smooth',
       block: 'start'
     });
@@ -102,12 +102,12 @@ export default function Landing() {
               <Headphones className="text-2xl text-blue-600 mr-3" />
               <span className="text-xl font-bold text-slate-900">DevPodcasts</span>
             </div>
-            
+
             <div className="hidden md:flex space-x-8">
               <a href="#categories" className="text-slate-700 hover:text-blue-600 transition-colors">Kategorie</a>
               <a href="#about" className="text-slate-700 hover:text-blue-600 transition-colors">O nas</a>
             </div>
-            
+
             <div className="flex items-center space-x-4">
               {!isAuthenticated && (
                 <div className="flex space-x-2">
@@ -132,24 +132,24 @@ export default function Landing() {
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
-                Naucz się programowania 
+                Naucz się programowania
                 <span className="text-amber-400"> w samochodzie</span>
               </h1>
               <p className="text-xl md:text-2xl mb-8 text-blue-100 leading-relaxed">
-                Pogłębiona wiedza techniczna w formacie audio. Zamiast oglądać kod, 
+                Pogłębiona wiedza techniczna w formacie audio. Zamiast oglądać kod,
                 słuchaj o tym jak wszystko działa pod spodem.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 mb-8">
-                <Button 
-                  size="lg" 
+                <Button
+                  size="lg"
                   onClick={scrollToCategories}
                   className="bg-amber-500 hover:bg-amber-600 text-white font-semibold text-lg px-8 py-4"
                 >
                   <Play className="mr-3 h-5 w-5" />
                   Rozpocznij naukę
                 </Button>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="lg"
                   className="border-2 border-white text-white hover:bg-white hover:text-blue-600 font-semibold text-lg px-8 py-4"
                   onClick={() => document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' })}
@@ -168,7 +168,7 @@ export default function Landing() {
                 </div>
               </div>
             </div>
-            
+
             <div className="relative">
               <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 border border-white/20">
                 <div className="space-y-4">
@@ -194,7 +194,7 @@ export default function Landing() {
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">Kategorie podcastów</h2>
             <p className="text-xl text-slate-600 max-w-3xl mx-auto">
-              Wybierz technologię, którą chcesz zgłębić. Każdy podcast to głęboka analiza 
+              Wybierz technologię, którą chcesz zgłębić. Każdy podcast to głęboka analiza
               tematu przygotowana z myślą o rozmowach rekrutacyjnych.
             </p>
           </div>
@@ -209,16 +209,28 @@ export default function Landing() {
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {javaPodcasts.map((podcast, index) => (
                   <Card key={podcast.id} className="p-6 hover:shadow-lg transition-all duration-300 border border-slate-200 hover:border-blue-600">
-                    <div className={`h-48 bg-gradient-to-br ${getGradientClass(index)} rounded-lg mb-4 flex items-center justify-center relative overflow-hidden`}>
-                      <div className="absolute inset-0 bg-black/20"></div>
-                      <Headphones className="h-12 w-12 text-white relative z-10" />
-                      {podcast.duration && (
-                        <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm rounded px-2 py-1 text-white text-xs font-medium">
-                          {podcast.duration} min
+                    <div className="mb-4">
+                      {podcast.imageUrl ? (
+                        <div className="w-full h-32 mb-4 rounded-lg overflow-hidden">
+                          <img
+                            src={podcast.imageUrl}
+                            alt={podcast.title}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-full h-32 mb-4 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                          <span className="text-4xl text-white">{getCategoryIcon('java')}</span>
                         </div>
                       )}
+                      <div>
+                        <h3 className="font-semibold text-lg">{podcast.title}</h3>
+                        <Badge variant="secondary">Java</Badge>
+                        {podcast.status === "coming_soon" && (
+                          <Badge variant="outline" className="ml-2">Wkrótce</Badge>
+                        )}
+                      </div>
                     </div>
-                    <h4 className="text-lg font-semibold mb-2">{podcast.title}</h4>
                     <p className="text-slate-600 text-sm mb-4 line-clamp-3">
                       {podcast.description?.replace(/<[^>]*>/g, '').substring(0, 120)}...
                     </p>
@@ -233,10 +245,20 @@ export default function Landing() {
                           Poznaj produkt
                         </Button>
                       </Link>
-                      <Button onClick={() => handleBuyPodcast(podcast.id)} className="bg-amber-500 hover:bg-amber-600 w-full">
-                        <ShoppingCart className="mr-2 h-4 w-4" />
-                        Kup
-                      </Button>
+                      {podcast.status === "coming_soon" ? (
+                        <Badge variant="secondary" className="w-full justify-center py-2">
+                          Wkrótce dostępne
+                        </Badge>
+                      ) : podcast.status === "public" ? (
+                        <Button onClick={() => handleBuyPodcast(podcast.id)} className="bg-amber-500 hover:bg-amber-600 w-full">
+                          <ShoppingCart className="mr-2 h-4 w-4" />
+                          Kup
+                        </Button>
+                      ) : (
+                        <Badge variant="outline" className="w-full justify-center py-2">
+                          Szkic
+                        </Badge>
+                      )}
                     </div>
                   </Card>
                 ))}
@@ -254,16 +276,28 @@ export default function Landing() {
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {jsPodcasts.map((podcast, index) => (
                   <Card key={podcast.id} className="p-6 hover:shadow-lg transition-all duration-300 border border-slate-200 hover:border-blue-600">
-                    <div className={`h-48 bg-gradient-to-br ${getGradientClass(index + 5)} rounded-lg mb-4 flex items-center justify-center relative overflow-hidden`}>
-                      <div className="absolute inset-0 bg-black/20"></div>
-                      <Headphones className="h-12 w-12 text-white relative z-10" />
-                      {podcast.duration && (
-                        <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm rounded px-2 py-1 text-white text-xs font-medium">
-                          {podcast.duration} min
+                    <div className="mb-4">
+                      {podcast.imageUrl ? (
+                        <div className="w-full h-32 mb-4 rounded-lg overflow-hidden">
+                          <img
+                            src={podcast.imageUrl}
+                            alt={podcast.title}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-full h-32 mb-4 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                          <span className="text-4xl text-white">{getCategoryIcon('javascript')}</span>
                         </div>
                       )}
+                      <div>
+                        <h3 className="font-semibold text-lg">{podcast.title}</h3>
+                        <Badge variant="secondary">JavaScript</Badge>
+                        {podcast.status === "coming_soon" && (
+                          <Badge variant="outline" className="ml-2">Wkrótce</Badge>
+                        )}
+                      </div>
                     </div>
-                    <h4 className="text-lg font-semibold mb-2">{podcast.title}</h4>
                     <p className="text-slate-600 text-sm mb-4 line-clamp-3">
                       {podcast.description?.replace(/<[^>]*>/g, '').substring(0, 120)}...
                     </p>
@@ -278,10 +312,20 @@ export default function Landing() {
                           Poznaj produkt
                         </Button>
                       </Link>
-                      <Button onClick={() => handleBuyPodcast(podcast.id)} className="bg-amber-500 hover:bg-amber-600 w-full">
-                        <ShoppingCart className="mr-2 h-4 w-4" />
-                        Kup
-                      </Button>
+                      {podcast.status === "coming_soon" ? (
+                        <Badge variant="secondary" className="w-full justify-center py-2">
+                          Wkrótce dostępne
+                        </Badge>
+                      ) : podcast.status === "public" ? (
+                        <Button onClick={() => handleBuyPodcast(podcast.id)} className="bg-amber-500 hover:bg-amber-600 w-full">
+                          <ShoppingCart className="mr-2 h-4 w-4" />
+                          Kup
+                        </Button>
+                      ) : (
+                        <Badge variant="outline" className="w-full justify-center py-2">
+                          Szkic
+                        </Badge>
+                      )}
                     </div>
                   </Card>
                 ))}
@@ -299,16 +343,28 @@ export default function Landing() {
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {azurePodcasts.map((podcast, index) => (
                   <Card key={podcast.id} className="p-6 hover:shadow-lg transition-all duration-300 border border-slate-200 hover:border-blue-600">
-                    <div className={`h-48 bg-gradient-to-br ${getGradientClass(index + 10)} rounded-lg mb-4 flex items-center justify-center relative overflow-hidden`}>
-                      <div className="absolute inset-0 bg-black/20"></div>
-                      <Headphones className="h-12 w-12 text-white relative z-10" />
-                      {podcast.duration && (
-                        <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm rounded px-2 py-1 text-white text-xs font-medium">
-                          {podcast.duration} min
+                    <div className="mb-4">
+                      {podcast.imageUrl ? (
+                        <div className="w-full h-32 mb-4 rounded-lg overflow-hidden">
+                          <img
+                            src={podcast.imageUrl}
+                            alt={podcast.title}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-full h-32 mb-4 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                          <span className="text-4xl text-white">{getCategoryIcon('azure')}</span>
                         </div>
                       )}
+                      <div>
+                        <h3 className="font-semibold text-lg">{podcast.title}</h3>
+                        <Badge variant="secondary">Microsoft Azure</Badge>
+                        {podcast.status === "coming_soon" && (
+                          <Badge variant="outline" className="ml-2">Wkrótce</Badge>
+                        )}
+                      </div>
                     </div>
-                    <h4 className="text-lg font-semibold mb-2">{podcast.title}</h4>
                     <p className="text-slate-600 text-sm mb-4 line-clamp-3">
                       {podcast.description?.replace(/<[^>]*>/g, '').substring(0, 120)}...
                     </p>
@@ -323,10 +379,20 @@ export default function Landing() {
                           Poznaj produkt
                         </Button>
                       </Link>
-                      <Button onClick={() => handleBuyPodcast(podcast.id)} className="bg-amber-500 hover:bg-amber-600 w-full">
-                        <ShoppingCart className="mr-2 h-4 w-4" />
-                        Kup
-                      </Button>
+                      {podcast.status === "coming_soon" ? (
+                        <Badge variant="secondary" className="w-full justify-center py-2">
+                          Wkrótce dostępne
+                        </Badge>
+                      ) : podcast.status === "public" ? (
+                        <Button onClick={() => handleBuyPodcast(podcast.id)} className="bg-amber-500 hover:bg-amber-600 w-full">
+                          <ShoppingCart className="mr-2 h-4 w-4" />
+                          Kup
+                        </Button>
+                      ) : (
+                        <Badge variant="outline" className="w-full justify-center py-2">
+                          Szkic
+                        </Badge>
+                      )}
                     </div>
                   </Card>
                 ))}
@@ -345,18 +411,28 @@ export default function Landing() {
                 {archPodcasts.map((podcast, index) => (
                   <Card key={podcast.id} className="p-6 hover:shadow-lg transition-all duration-300 border border-slate-200 hover:border-blue-600 cursor-pointer"
                     onClick={() => window.location.href = `/product/${podcast.slug}`}>
-                    <div className={`h-48 bg-gradient-to-br ${getGradientClass(index + 15)} rounded-lg mb-4 flex items-center justify-center relative overflow-hidden`}>
-                      <div className="absolute inset-0 bg-black/20"></div>
-                      <Headphones className="h-12 w-12 text-white relative z-10" />
-                      {podcast.duration && (
-                        <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm rounded px-2 py-1 text-white text-xs font-medium">
-                          {podcast.duration} min
+                    <div className="mb-4">
+                      {podcast.imageUrl ? (
+                        <div className="w-full h-32 mb-4 rounded-lg overflow-hidden">
+                          <img
+                            src={podcast.imageUrl}
+                            alt={podcast.title}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-full h-32 mb-4 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                          <span className="text-4xl text-white">{getCategoryIcon('architecture')}</span>
                         </div>
                       )}
+                      <Link href={`/product/${podcast.slug}`}>
+                        <h4 className="text-lg font-semibold mb-2 hover:text-blue-600 transition-colors cursor-pointer">{podcast.title}</h4>
+                      </Link>
+                      <Badge variant="secondary">Software Architecture</Badge>
+                      {podcast.status === "coming_soon" && (
+                        <Badge variant="outline" className="ml-2">Wkrótce</Badge>
+                      )}
                     </div>
-                    <Link href={`/product/${podcast.slug}`}>
-                      <h4 className="text-lg font-semibold mb-2 hover:text-blue-600 transition-colors cursor-pointer">{podcast.title}</h4>
-                    </Link>
                     <p className="text-slate-600 text-sm mb-4 line-clamp-3">
                       {podcast.description?.replace(/<[^>]*>/g, '').substring(0, 120)}...
                     </p>
@@ -364,17 +440,27 @@ export default function Landing() {
                       <span className="text-2xl font-bold text-blue-600">
                         {formatPrice(podcast.price)}
                       </span>
-                    <div className="flex flex-col gap-2">
-                      <Link href={`/product/${podcast.slug}`} className="w-full">
-                        <Button variant="outline" className="w-full">
-                          Poznaj produkt
-                        </Button>
-                      </Link>
-                      <Button onClick={() => handleBuyPodcast(podcast.id)} className="bg-amber-500 hover:bg-amber-600 w-full">
-                        <ShoppingCart className="mr-2 h-4 w-4" />
-                        Kup
-                      </Button>
-                    </div>
+                      <div className="flex flex-col gap-2">
+                        <Link href={`/product/${podcast.slug}`} className="w-full">
+                          <Button variant="outline" className="w-full">
+                            Poznaj produkt
+                          </Button>
+                        </Link>
+                        {podcast.status === "coming_soon" ? (
+                          <Badge variant="secondary" className="w-full justify-center py-2">
+                            Wkrótce dostępne
+                          </Badge>
+                        ) : podcast.status === "public" ? (
+                          <Button onClick={() => handleBuyPodcast(podcast.id)} className="bg-amber-500 hover:bg-amber-600 w-full">
+                            <ShoppingCart className="mr-2 h-4 w-4" />
+                            Kup
+                          </Button>
+                        ) : (
+                          <Badge variant="outline" className="w-full justify-center py-2">
+                            Szkic
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                   </Card>
                 ))}
@@ -390,7 +476,7 @@ export default function Landing() {
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
               <h2 className="text-3xl md:text-4xl font-bold mb-6">
-                Dlaczego nasze podcasty są 
+                Dlaczego nasze podcasty są
                 <span className="text-blue-600"> wyjątkowe?</span>
               </h2>
               <div className="space-y-6">
@@ -401,12 +487,12 @@ export default function Landing() {
                   <div>
                     <h3 className="text-lg font-semibold mb-2">Ucz się w drodze do pracy</h3>
                     <p className="text-slate-600">
-                      Zamiast oglądać kod na ekranie, słuchasz o koncepcjach i mechanizmach. 
+                      Zamiast oglądać kod na ekranie, słuchasz o koncepcjach i mechanizmach.
                       Idealne do samochodu, autobusu czy podczas treningu.
                     </p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-start space-x-4">
                   <div className="bg-blue-600/10 p-3 rounded-lg">
                     <Microscope className="text-blue-600 h-6 w-6" />
@@ -414,12 +500,12 @@ export default function Landing() {
                   <div>
                     <h3 className="text-lg font-semibold mb-2">Głęboka analiza techniczna</h3>
                     <p className="text-slate-600">
-                      Nie tylko "jak", ale przede wszystkim "dlaczego". Rozumiemy mechanizmy 
+                      Nie tylko "jak", ale przede wszystkim "dlaczego". Rozumiemy mechanizmy
                       działania technologii od środka, nie tylko API.
                     </p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-start space-x-4">
                   <div className="bg-blue-600/10 p-3 rounded-lg">
                     <Bus className="text-blue-600 h-6 w-6" />
@@ -427,14 +513,14 @@ export default function Landing() {
                   <div>
                     <h3 className="text-lg font-semibold mb-2">Przygotowanie na rozmowy</h3>
                     <p className="text-slate-600">
-                      Odpowiadamy na najtrudniejsze pytania rekrutacyjne. Po wysłuchaniu 
+                      Odpowiadamy na najtrudniejsze pytania rekrutacyjne. Po wysłuchaniu
                       naszych podcastów nie zaskoczy Cię żadne techniczne pytanie.
                     </p>
                   </div>
                 </div>
               </div>
             </div>
-            
+
             <div className="space-y-8">
               <Card className="p-6 border shadow-sm">
                 <div className="flex items-center mb-4">
@@ -444,12 +530,12 @@ export default function Landing() {
                   <span className="font-semibold">500+ zadowolonych programistów</span>
                 </div>
                 <p className="text-slate-600 text-sm">
-                  "Dzięki podcastom DevPodcasts dostałem pracę w Google. 
+                  "Dzięki podcastom DevPodcasts dostałem pracę w Google.
                   Głęboka wiedza techniczna była kluczowa na rozmowie."
                 </p>
                 <div className="mt-3 text-sm text-slate-500">- Michał K., Senior Java Developer</div>
               </Card>
-              
+
               <Card className="p-6 border shadow-sm">
                 <div className="flex items-center mb-4">
                   <div className="bg-blue-100 p-2 rounded-full mr-4">
@@ -458,7 +544,7 @@ export default function Landing() {
                   <span className="font-semibold">Średnia ocena: 4.9/5</span>
                 </div>
                 <p className="text-slate-600 text-sm">
-                  "Najlepsza inwestycja w rozwój. Słucham w samochodzie 
+                  "Najlepsza inwestycja w rozwój. Słucham w samochodzie
                   i czuję jak moja wiedza techniczna rośnie każdego dnia."
                 </p>
                 <div className="mt-3 text-sm text-slate-500">- Anna W., Frontend Architect</div>
@@ -481,7 +567,7 @@ export default function Landing() {
                 Pogłębiona wiedza techniczna dla programistów w formacie audio.
               </p>
             </div>
-            
+
             <div>
               <h3 className="font-semibold mb-4">Kategorie</h3>
               <ul className="space-y-2 text-slate-300">
@@ -491,7 +577,7 @@ export default function Landing() {
                 <li><a href="#" className="hover:text-white">Architecture</a></li>
               </ul>
             </div>
-            
+
             <div>
               <h3 className="font-semibold mb-4">Pomoc</h3>
               <ul className="space-y-2 text-slate-300">
@@ -501,16 +587,16 @@ export default function Landing() {
                 <li><a href="#" className="hover:text-white">Polityka prywatności</a></li>
               </ul>
             </div>
-            
+
             <div>
               <h3 className="font-semibold mb-4">Newsletter</h3>
               <p className="text-slate-300 mb-4">
                 Otrzymuj informacje o nowych podcastach
               </p>
               <div className="flex">
-                <input 
-                  type="email" 
-                  placeholder="Twój email" 
+                <input
+                  type="email"
+                  placeholder="Twój email"
                   className="flex-1 px-3 py-2 bg-slate-700 border border-slate-600 rounded-l-lg focus:outline-none focus:border-blue-600 text-white"
                 />
                 <Button className="bg-blue-600 px-4 py-2 rounded-r-lg hover:bg-blue-700">
@@ -519,7 +605,7 @@ export default function Landing() {
               </div>
             </div>
           </div>
-          
+
           <Separator className="my-8 bg-slate-700" />
           <div className="text-center text-slate-400">
             <p>&copy; 2024 DevPodcasts. Wszystkie prawa zastrzeżone.</p>

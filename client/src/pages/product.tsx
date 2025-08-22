@@ -1,9 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { useParams } from "wouter";
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
 import { Link } from "wouter";
 import { 
@@ -36,9 +38,37 @@ export default function Product() {
     logoutMutation.mutate();
   };
 
+  const [waitlistEmail, setWaitlistEmail] = useState("");
+  const [isJoiningWaitlist, setIsJoiningWaitlist] = useState(false);
+
   const handleBuyNow = () => {
     if (!podcast) return;
     window.location.href = `/checkout/${podcast.id}`;
+  };
+
+  const handleJoinWaitlist = async () => {
+    if (!waitlistEmail || !podcast) return;
+    
+    setIsJoiningWaitlist(true);
+    try {
+      const response = await fetch("/api/waitlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: waitlistEmail, podcastId: podcast.id }),
+      });
+      
+      if (response.ok) {
+        alert("Dodano do listy zainteresowanych! Powiadomimy Cię o dostępności.");
+        setWaitlistEmail("");
+      } else {
+        const error = await response.json();
+        alert(error.message || "Błąd podczas dodawania do listy");
+      }
+    } catch (error) {
+      alert("Błąd podczas dodawania do listy");
+    } finally {
+      setIsJoiningWaitlist(false);
+    }
   };
 
   const formatPrice = (priceInCents: number) => {
@@ -230,14 +260,44 @@ export default function Product() {
                 <p className="text-slate-600">Jednorazowa płatność</p>
               </div>
 
-              <Button 
-                onClick={handleBuyNow}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 text-lg"
-                size="lg"
-              >
-                <ShoppingCart className="mr-2 h-5 w-5" />
-                Kup Teraz
-              </Button>
+              {podcast.status === "coming_soon" ? (
+                <div className="space-y-4">
+                  <div className="text-center">
+                    <Badge variant="secondary" className="mb-2">Wkrótce dostępne</Badge>
+                    <p className="text-sm text-slate-600 mb-4">
+                      Ten podcast będzie dostępny wkrótce. Zostaw swój email, a powiadomimy Cię o dostępności.
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Input
+                      type="email"
+                      placeholder="Twój email"
+                      value={waitlistEmail}
+                      onChange={(e) => setWaitlistEmail(e.target.value)}
+                    />
+                    <Button 
+                      onClick={handleJoinWaitlist}
+                      disabled={!waitlistEmail || isJoiningWaitlist}
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
+                      {isJoiningWaitlist ? "..." : "Powiadom mnie"}
+                    </Button>
+                  </div>
+                </div>
+              ) : podcast.status === "public" ? (
+                <Button 
+                  onClick={handleBuyNow}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 text-lg"
+                  size="lg"
+                >
+                  <ShoppingCart className="mr-2 h-5 w-5" />
+                  Kup Teraz
+                </Button>
+              ) : (
+                <Badge variant="secondary" className="w-full justify-center py-3">
+                  Niedostępny
+                </Badge>
+              )}
 
               <div className="mt-4 text-xs text-slate-500 text-center">
                 <p>✓ Natychmiastowy dostęp</p>

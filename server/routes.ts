@@ -444,6 +444,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Waitlist endpoint
+  app.post("/api/waitlist", async (req, res) => {
+    try {
+      const { email, podcastId } = req.body;
+      
+      if (!email || !podcastId) {
+        return res.status(400).json({ message: "Email i ID podcastu są wymagane" });
+      }
+
+      // Check if already on waitlist
+      const exists = await storage.checkWaitlistEntry(email, podcastId);
+      if (exists) {
+        return res.status(400).json({ message: "Ten email już jest na liście zainteresowanych" });
+      }
+
+      const entry = await storage.addToWaitlist({ email, podcastId });
+      res.status(201).json({ message: "Dodano do listy zainteresowanych" });
+    } catch (error) {
+      console.error("Error adding to waitlist:", error);
+      res.status(500).json({ message: "Błąd podczas dodawania do listy" });
+    }
+  });
+
   // Protected audio file serving
   app.get("/objects/:objectPath(*)", isAuthenticated, async (req: any, res) => {
     const userId = req.session.userId;

@@ -5,8 +5,23 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
@@ -23,10 +38,12 @@ import SimpleEditor from "@/components/SimpleEditor";
 const podcastFormSchema = z.object({
   title: z.string().min(1, "Tytuł jest wymagany"),
   slug: z.string().min(1, "Slug jest wymagany"),
-  description: z.string().min(1, "Opis jest wymagany"),
+  description: z.string().optional(),
   duration: z.number().min(1, "Czas trwania musi być większy niż 0"),
-  price: z.number().min(100, "Cena musi być co najmniej 1 zł (100 grosze)"),
+  price: z.number().min(1, "Cena musi być większa niż 0"),
   categoryId: z.string().min(1, "Kategoria jest wymagana"),
+  imageObjectPath: z.string().optional(),
+  status: z.enum(["draft", "public", "coming_soon"]),
   isActive: z.boolean(),
 });
 
@@ -103,6 +120,8 @@ export default function Admin() {
       duration: 30,
       price: 2900,
       categoryId: "",
+      imageObjectPath: "",
+      status: "draft",
       isActive: true,
     },
   });
@@ -227,6 +246,8 @@ export default function Admin() {
       duration: podcast.duration || 30,
       price: podcast.price,
       categoryId: podcast.categoryId,
+      imageObjectPath: podcast.imageObjectPath || "",
+      status: podcast.status || "draft",
       isActive: podcast.isActive || true,
     });
   };
@@ -268,7 +289,7 @@ export default function Admin() {
               <Settings className="text-2xl text-blue-600 mr-3" />
               <span className="text-xl font-bold text-slate-900">Panel Administracyjny</span>
             </div>
-            
+
             <div className="flex items-center space-x-4">
               <Link href="/">
                 <Button variant="ghost" className="flex items-center text-slate-700 hover:text-blue-600">
@@ -420,6 +441,72 @@ export default function Admin() {
                         </FormItem>
                       )}
                     />
+                    <FormField
+                      control={form.control}
+                      name="imageObjectPath"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Obrazek</FormLabel>
+                          <FormControl>
+                            <div className="space-y-2">
+                              <Input
+                                placeholder="Ścieżka do obrazka..."
+                                {...field}
+                              />
+                              <p className="text-sm text-gray-500">
+                                Zostaw puste dla domyślnego tła lub wklej ścieżkę do pliku w Object Storage
+                              </p>
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="status"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Status</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Wybierz status" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="draft">Szkic</SelectItem>
+                              <SelectItem value="public">Publiczny</SelectItem>
+                              <SelectItem value="coming_soon">Wkrótce</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="isActive"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                          <div className="space-y-1 leading-none">
+                            <FormLabel>
+                              Podcast jest aktywny
+                            </FormLabel>
+                            <FormMessage />
+                          </div>
+                        </FormItem>
+                      )}
+                    />
+
                     <div className="flex justify-end space-x-4">
                       <Button
                         type="button"
@@ -458,6 +545,7 @@ export default function Admin() {
                         <span>Czas: {podcast.duration} min</span>
                         <span>Cena: {formatPrice(podcast.price)}</span>
                         <span>Status: {podcast.isActive ? "Aktywny" : "Nieaktywny"}</span>
+                        <span>Stan: {podcast.status}</span>
                       </div>
                     </div>
                     <div className="flex space-x-2">
@@ -507,7 +595,183 @@ export default function Admin() {
             </DialogHeader>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                {/* Same form fields as above */}
+                <FormField
+                  control={form.control}
+                  name="title"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tytuł</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          onChange={(e) => {
+                            field.onChange(e);
+                            if (!editingPodcast) {
+                              form.setValue("slug", generateSlug(e.target.value));
+                            }
+                          }}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="slug"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Slug (URL)</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Opis (HTML)</FormLabel>
+                      <FormControl>
+                        <SimpleEditor
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder="Wprowadź opis produktu używając HTML..."
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="duration"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Czas trwania (minuty)</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            {...field}
+                            onChange={(e) => field.onChange(parseInt(e.target.value))}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="price"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Cena (grosze)</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            {...field}
+                            onChange={(e) => field.onChange(parseInt(e.target.value))}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <FormField
+                  control={form.control}
+                  name="categoryId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Kategoria</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Wybierz kategorię" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {categories?.map((category) => (
+                            <SelectItem key={category.id} value={category.id}>
+                              {category.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="imageObjectPath"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Obrazek</FormLabel>
+                      <FormControl>
+                        <div className="space-y-2">
+                          <Input
+                            placeholder="Ścieżka do obrazka..."
+                            {...field}
+                          />
+                          <p className="text-sm text-gray-500">
+                            Zostaw puste dla domyślnego tła lub wklej ścieżkę do pliku w Object Storage
+                          </p>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Status</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Wybierz status" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="draft">Szkic</SelectItem>
+                          <SelectItem value="public">Publiczny</SelectItem>
+                          <SelectItem value="coming_soon">Wkrótce</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="isActive"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>
+                          Podcast jest aktywny
+                        </FormLabel>
+                        <FormMessage />
+                      </div>
+                    </FormItem>
+                  )}
+                />
+
                 <div className="flex justify-end space-x-4">
                   <Button
                     type="button"
