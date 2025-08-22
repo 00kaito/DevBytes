@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
 import { Link } from "wouter";
 import { Headphones, BookOpen, ShoppingCart, LogOut, Settings } from "lucide-react";
@@ -161,18 +162,41 @@ export default function Home() {
                         </div>
                       )}
                     </div>
-                    <h4 className="text-lg font-semibold mb-2">{podcast.title}</h4>
+                    <div>
+                      <h4 className="text-lg font-semibold mb-2">{podcast.title}</h4>
+                      <Badge variant="secondary">Java</Badge>
+                      {podcast.status === "coming_soon" && (
+                        <Badge variant="outline" className="ml-2">Wkrótce</Badge>
+                      )}
+                    </div>
                     <p className="text-slate-600 text-sm mb-4 line-clamp-3">
-                      {podcast.description}
+                      {podcast.description?.replace(/<[^>]*>/g, '').substring(0, 120)}...
                     </p>
-                    <div className="flex justify-between items-center">
+                    <div className="flex justify-between items-center mb-4">
                       <span className="text-2xl font-bold text-blue-600">
                         {formatPrice(podcast.price)}
                       </span>
-                      <Button onClick={() => handleBuyPodcast(podcast.id)} className="bg-amber-500 hover:bg-amber-600">
-                        <ShoppingCart className="mr-2 h-4 w-4" />
-                        Kup
-                      </Button>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <Link href={`/product/${podcast.slug}`} className="w-full">
+                        <Button variant="outline" className="w-full">
+                          Poznaj produkt
+                        </Button>
+                      </Link>
+                      {podcast.status === "coming_soon" ? (
+                        <Badge variant="secondary" className="w-full justify-center py-2">
+                          Wkrótce dostępne
+                        </Badge>
+                      ) : podcast.status === "public" ? (
+                        <Button onClick={() => handleBuyPodcast(podcast.id)} className="bg-amber-500 hover:bg-amber-600 w-full">
+                          <ShoppingCart className="mr-2 h-4 w-4" />
+                          Kup
+                        </Button>
+                      ) : (
+                        <Badge variant="outline" className="w-full justify-center py-2">
+                          Szkic
+                        </Badge>
+                      )}
                     </div>
                   </Card>
                 ))}
@@ -199,18 +223,41 @@ export default function Home() {
                         </div>
                       )}
                     </div>
-                    <h4 className="text-lg font-semibold mb-2">{podcast.title}</h4>
+                    <div>
+                      <h4 className="text-lg font-semibold mb-2">{podcast.title}</h4>
+                      <Badge variant="secondary">JavaScript</Badge>
+                      {podcast.status === "coming_soon" && (
+                        <Badge variant="outline" className="ml-2">Wkrótce</Badge>
+                      )}
+                    </div>
                     <p className="text-slate-600 text-sm mb-4 line-clamp-3">
-                      {podcast.description}
+                      {podcast.description?.replace(/<[^>]*>/g, '').substring(0, 120)}...
                     </p>
-                    <div className="flex justify-between items-center">
+                    <div className="flex justify-between items-center mb-4">
                       <span className="text-2xl font-bold text-blue-600">
                         {formatPrice(podcast.price)}
                       </span>
-                      <Button onClick={() => handleBuyPodcast(podcast.id)} className="bg-amber-500 hover:bg-amber-600">
-                        <ShoppingCart className="mr-2 h-4 w-4" />
-                        Kup
-                      </Button>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <Link href={`/product/${podcast.slug}`} className="w-full">
+                        <Button variant="outline" className="w-full">
+                          Poznaj produkt
+                        </Button>
+                      </Link>
+                      {podcast.status === "coming_soon" ? (
+                        <Badge variant="secondary" className="w-full justify-center py-2">
+                          Wkrótce dostępne
+                        </Badge>
+                      ) : podcast.status === "public" ? (
+                        <Button onClick={() => handleBuyPodcast(podcast.id)} className="bg-amber-500 hover:bg-amber-600 w-full">
+                          <ShoppingCart className="mr-2 h-4 w-4" />
+                          Kup
+                        </Button>
+                      ) : (
+                        <Badge variant="outline" className="w-full justify-center py-2">
+                          Szkic
+                        </Badge>
+                      )}
                     </div>
                   </Card>
                 ))}
@@ -237,18 +284,41 @@ export default function Home() {
                         </div>
                       )}
                     </div>
-                    <h4 className="text-lg font-semibold mb-2">{podcast.title}</h4>
+                    <div>
+                      <h4 className="text-lg font-semibold mb-2">{podcast.title}</h4>
+                      <Badge variant="secondary">Microsoft Azure</Badge>
+                      {podcast.status === "coming_soon" && (
+                        <Badge variant="outline" className="ml-2">Wkrótce</Badge>
+                      )}
+                    </div>
                     <p className="text-slate-600 text-sm mb-4 line-clamp-3">
-                      {podcast.description}
+                      {podcast.description?.replace(/<[^>]*>/g, '').substring(0, 120)}...
                     </p>
-                    <div className="flex justify-between items-center">
+                    <div className="flex justify-between items-center mb-4">
                       <span className="text-2xl font-bold text-blue-600">
                         {formatPrice(podcast.price)}
                       </span>
-                      <Button onClick={() => handleBuyPodcast(podcast.id)} className="bg-amber-500 hover:bg-amber-600">
-                        <ShoppingCart className="mr-2 h-4 w-4" />
-                        Kup
-                      </Button>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <Link href={`/product/${podcast.slug}`} className="w-full">
+                        <Button variant="outline" className="w-full">
+                          Poznaj produkt
+                        </Button>
+                      </Link>
+                      {podcast.status === "coming_soon" ? (
+                        <Badge variant="secondary" className="w-full justify-center py-2">
+                          Wkrótce dostępne
+                        </Badge>
+                      ) : podcast.status === "public" ? (
+                        <Button onClick={() => handleBuyPodcast(podcast.id)} className="bg-amber-500 hover:bg-amber-600 w-full">
+                          <ShoppingCart className="mr-2 h-4 w-4" />
+                          Kup
+                        </Button>
+                      ) : (
+                        <Badge variant="outline" className="w-full justify-center py-2">
+                          Szkic
+                        </Badge>
+                      )}
                     </div>
                   </Card>
                 ))}
@@ -275,18 +345,41 @@ export default function Home() {
                         </div>
                       )}
                     </div>
-                    <h4 className="text-lg font-semibold mb-2">{podcast.title}</h4>
+                    <div>
+                      <h4 className="text-lg font-semibold mb-2">{podcast.title}</h4>
+                      <Badge variant="secondary">Software Architecture</Badge>
+                      {podcast.status === "coming_soon" && (
+                        <Badge variant="outline" className="ml-2">Wkrótce</Badge>
+                      )}
+                    </div>
                     <p className="text-slate-600 text-sm mb-4 line-clamp-3">
-                      {podcast.description}
+                      {podcast.description?.replace(/<[^>]*>/g, '').substring(0, 120)}...
                     </p>
-                    <div className="flex justify-between items-center">
+                    <div className="flex justify-between items-center mb-4">
                       <span className="text-2xl font-bold text-blue-600">
                         {formatPrice(podcast.price)}
                       </span>
-                      <Button onClick={() => handleBuyPodcast(podcast.id)} className="bg-amber-500 hover:bg-amber-600">
-                        <ShoppingCart className="mr-2 h-4 w-4" />
-                        Kup
-                      </Button>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <Link href={`/product/${podcast.slug}`} className="w-full">
+                        <Button variant="outline" className="w-full">
+                          Poznaj produkt
+                        </Button>
+                      </Link>
+                      {podcast.status === "coming_soon" ? (
+                        <Badge variant="secondary" className="w-full justify-center py-2">
+                          Wkrótce dostępne
+                        </Badge>
+                      ) : podcast.status === "public" ? (
+                        <Button onClick={() => handleBuyPodcast(podcast.id)} className="bg-amber-500 hover:bg-amber-600 w-full">
+                          <ShoppingCart className="mr-2 h-4 w-4" />
+                          Kup
+                        </Button>
+                      ) : (
+                        <Badge variant="outline" className="w-full justify-center py-2">
+                          Szkic
+                        </Badge>
+                      )}
                     </div>
                   </Card>
                 ))}
