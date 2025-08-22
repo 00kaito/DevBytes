@@ -45,17 +45,19 @@ const JWT_CONFIG = {
 
 // Function to generate JWT token
 const generateJWT = (userId: string, userEmail: string): string => {
+  const now = Math.floor(Date.now() / 1000); // Current time in seconds (Unix timestamp)
+  const expiration = now + (24 * 60 * 60); // Add 24 hours in seconds
+  
   return jwt.sign(
     { 
       sub: userId,
-      email: userEmail
+      email: userEmail,
+      iat: now,
+      exp: expiration,
+      aud: JWT_CONFIG.audience,
+      iss: JWT_CONFIG.issuer
     },
-    JWT_CONFIG.secret,
-    { 
-      expiresIn: JWT_CONFIG.expiresIn,
-      issuer: JWT_CONFIG.issuer,
-      audience: JWT_CONFIG.audience
-    }
+    JWT_CONFIG.secret
   );
 };
 
