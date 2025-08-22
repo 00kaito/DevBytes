@@ -230,6 +230,13 @@ export default function Admin() {
   };
 
   const onSubmit = (data: PodcastFormData) => {
+    console.log('[ADMIN FORM] Submitting form with data:', {
+      formData: data,
+      hasStatus: 'status' in data,
+      statusValue: data.status,
+      isEditing: !!editingPodcast
+    });
+    
     if (editingPodcast) {
       updateMutation.mutate({ id: editingPodcast.id, data });
     } else {

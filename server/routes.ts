@@ -397,10 +397,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/admin/podcasts/:id", isAuthenticated, isAdmin, async (req, res) => {
     try {
+      console.log(`[ADMIN UPDATE] Updating podcast ${req.params.id} with data:`, {
+        receivedData: req.body,
+        hasStatus: 'status' in req.body,
+        statusValue: req.body.status
+      });
+      
       const podcast = await storage.updatePodcast(req.params.id, req.body);
       if (!podcast) {
         return res.status(404).json({ message: "Podcast not found" });
       }
+      
+      console.log(`[ADMIN UPDATE] Successfully updated podcast, new status: ${podcast.status}`);
       res.json(podcast);
     } catch (error) {
       console.error("Error updating podcast:", error);
