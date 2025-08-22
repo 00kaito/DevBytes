@@ -287,16 +287,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Podcasts routes
   app.get("/api/categories/:slug/podcasts", async (req, res) => {
     try {
+      console.log(`[API] Fetching podcasts for category: ${req.params.slug}`);
+      
       const category = await storage.getCategoryBySlug(req.params.slug);
       if (!category) {
+        console.log(`[API] Category not found: ${req.params.slug}`);
         return res.status(404).json({ message: "Category not found" });
       }
       
+      console.log(`[API] Found category: ${category.name} (ID: ${category.id})`);
       const podcasts = await storage.getPodcastsByCategory(category.id);
+      console.log(`[API] Successfully fetched ${podcasts.length} podcasts for category ${category.name}`);
       res.json(podcasts);
-    } catch (error) {
-      console.error("Error fetching podcasts:", error);
-      res.status(500).json({ message: "Failed to fetch podcasts" });
+    } catch (error: any) {
+      console.error("[API] Error fetching podcasts:", {
+        message: error.message,
+        stack: error.stack,
+        code: error.code,
+        detail: error.detail,
+        categorySlug: req.params.slug,
+        timestamp: new Date().toISOString()
+      });
+      res.status(500).json({ 
+        message: "Failed to fetch podcasts",
+        error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+      });
     }
   });
 
@@ -330,21 +345,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin routes (protected)
   app.get("/api/admin/podcasts", isAuthenticated, isAdmin, async (req, res) => {
     try {
+      console.log("[ADMIN] Fetching all podcasts...");
       const podcasts = await storage.getAllPodcasts();
+      console.log(`[ADMIN] Successfully fetched ${podcasts.length} podcasts`);
       res.json(podcasts);
-    } catch (error) {
-      console.error("Error fetching admin podcasts:", error);
-      res.status(500).json({ message: "Failed to fetch podcasts" });
+    } catch (error: any) {
+      console.error("[ADMIN] Error fetching admin podcasts:", {
+        message: error.message,
+        stack: error.stack,
+        code: error.code,
+        detail: error.detail,
+        userId: (req as any).session?.userId,
+        timestamp: new Date().toISOString()
+      });
+      res.status(500).json({ 
+        message: "Failed to fetch podcasts",
+        error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+      });
     }
   });
 
   app.post("/api/admin/podcasts", isAuthenticated, isAdmin, async (req, res) => {
     try {
+      console.log("[ADMIN] Creating new podcast:", {
+        title: req.body.title,
+        categoryId: req.body.categoryId,
+        userId: (req as any).session?.userId,
+        bodyKeys: Object.keys(req.body)
+      });
+      
       const podcast = await storage.createPodcast(req.body);
+      console.log(`[ADMIN] Successfully created podcast: ${podcast.title} (ID: ${podcast.id})`);
       res.status(201).json(podcast);
-    } catch (error) {
-      console.error("Error creating podcast:", error);
-      res.status(500).json({ message: "Failed to create podcast" });
+    } catch (error: any) {
+      console.error("[ADMIN] Error creating podcast:", {
+        message: error.message,
+        stack: error.stack,
+        code: error.code,
+        detail: error.detail,
+        requestBody: req.body,
+        userId: (req as any).session?.userId,
+        timestamp: new Date().toISOString()
+      });
+      res.status(500).json({ 
+        message: "Failed to create podcast",
+        error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+      });
     }
   });
 

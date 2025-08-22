@@ -112,21 +112,43 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getPodcastsByCategory(categoryId: string): Promise<PodcastWithCategory[]> {
-    const results = await db
-      .select()
-      .from(podcasts)
-      .leftJoin(categories, eq(podcasts.categoryId, categories.id))
-      .where(and(
-        eq(podcasts.categoryId, categoryId), 
-        eq(podcasts.isActive, true),
-        eq(podcasts.status, "public")
-      ));
+    console.log(`[DB] Fetching podcasts for categoryId: ${categoryId}`);
+    
+    try {
+      const results = await db
+        .select()
+        .from(podcasts)
+        .leftJoin(categories, eq(podcasts.categoryId, categories.id))
+        .where(and(
+          eq(podcasts.categoryId, categoryId), 
+          eq(podcasts.isActive, true),
+          eq(podcasts.status, "public")
+        ));
 
-    return results.map(result => ({
-      ...result.podcasts,
-      category: result.categories!,
-      imageUrl: result.podcasts.imageObjectPath ? `/public-objects/${result.podcasts.imageObjectPath}` : null,
-    }));
+      console.log(`[DB] Raw query results count: ${results.length}`);
+      console.log(`[DB] Sample result structure:`, results[0] ? {
+        podcastsKeys: Object.keys(results[0].podcasts || {}),
+        categoriesKeys: Object.keys(results[0].categories || {})
+      } : 'No results');
+
+      const mappedResults = results.map(result => ({
+        ...result.podcasts,
+        category: result.categories!,
+        imageUrl: result.podcasts.imageObjectPath ? `/public-objects/${result.podcasts.imageObjectPath}` : null,
+      }));
+
+      console.log(`[DB] Successfully mapped ${mappedResults.length} podcasts`);
+      return mappedResults;
+    } catch (error: any) {
+      console.error(`[DB] Error in getPodcastsByCategory:`, {
+        categoryId,
+        message: error.message,
+        code: error.code,
+        detail: error.detail,
+        stack: error.stack
+      });
+      throw error;
+    }
   }
 
   async getPodcastBySlug(slug: string): Promise<PodcastWithCategory | null> {
@@ -181,15 +203,49 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllPodcasts(): Promise<Podcast[]> {
-    return await db.select().from(podcasts).orderBy(desc(podcasts.createdAt));
+    console.log("[DB] Fetching all podcasts...");
+    
+    try {
+      const results = await db.select().from(podcasts).orderBy(desc(podcasts.createdAt));
+      console.log(`[DB] Successfully fetched ${results.length} podcasts`);
+      console.log(`[DB] Sample podcast structure:`, results[0] ? Object.keys(results[0]) : 'No podcasts found');
+      return results;
+    } catch (error: any) {
+      console.error(`[DB] Error in getAllPodcasts:`, {
+        message: error.message,
+        code: error.code,
+        detail: error.detail,
+        stack: error.stack
+      });
+      throw error;
+    }
   }
 
   async createPodcast(podcastData: InsertPodcast): Promise<Podcast> {
-    const [podcast] = await db
-      .insert(podcasts)
-      .values(podcastData)
-      .returning();
-    return podcast;
+    console.log("[DB] Creating podcast with data:", {
+      title: podcastData.title,
+      categoryId: podcastData.categoryId,
+      dataKeys: Object.keys(podcastData)
+    });
+    
+    try {
+      const [podcast] = await db
+        .insert(podcasts)
+        .values(podcastData)
+        .returning();
+      
+      console.log(`[DB] Successfully created podcast: ${podcast.title} (ID: ${podcast.id})`);
+      return podcast;
+    } catch (error: any) {
+      console.error(`[DB] Error in createPodcast:`, {
+        podcastData,
+        message: error.message,
+        code: error.code,
+        detail: error.detail,
+        stack: error.stack
+      });
+      throw error;
+    }
   }
 
   async updatePodcast(id: string, podcastData: Partial<InsertPodcast>): Promise<Podcast | undefined> {
