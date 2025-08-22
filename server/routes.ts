@@ -38,7 +38,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
 // JWT Configuration - matching external service
 const JWT_CONFIG = {
   secret: 'myVerySecureSecretKeyThatIsLongEnoughForHMACHS256Algorithm',
-  expiresIn: 86400000, // 86400000ms = 24 hours
+  expiresIn: '24h', // Use string format instead of milliseconds
   issuer: 'replit-audio-service',
   audience: 'audio-client'
 };
