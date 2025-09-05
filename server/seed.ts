@@ -1,5 +1,7 @@
 import { db } from "./db";
-import { categories, podcasts } from "@shared/schema";
+import { categories, podcasts, users } from "@shared/schema";
+import { AuthService } from "./authService";
+import { eq } from "drizzle-orm";
 
 async function seedDatabase() {
   console.log("🌱 Starting database seeding...");
@@ -185,9 +187,49 @@ async function seedDatabase() {
   }
 }
 
+async function createAdminUser() {
+  console.log("🔑 Checking for admin user...");
+  
+  try {
+    // Check if admin already exists
+    const existingAdmin = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, "admin@admin.com"))
+      .limit(1);
+
+    if (existingAdmin.length > 0) {
+      console.log("✅ Admin user already exists");
+      return existingAdmin[0];
+    }
+
+    // Create admin user
+    const passwordHash = await AuthService.hashPassword("admin@admin.com");
+    
+    const [adminUser] = await db
+      .insert(users)
+      .values({
+        email: "admin@admin.com",
+        passwordHash,
+        firstName: "Admin",
+        lastName: "User",
+        isAdmin: true,
+        isEmailVerified: true,
+      })
+      .returning();
+
+    console.log("✅ Created admin user:", adminUser.email);
+    return adminUser;
+    
+  } catch (error) {
+    console.error("❌ Error creating admin user:", error);
+    throw error;
+  }
+}
+
 // Run the seed function if this file is executed directly
 if (import.meta.url === `file://${process.argv[1]}`) {
   seedDatabase();
 }
 
-export { seedDatabase };
+export { seedDatabase, createAdminUser };
