@@ -47,6 +47,7 @@ const podcastFormSchema = z.object({
   newCategoryName: z.string().optional(),
   imageObjectPath: z.string().optional(),
   audioObjectPath: z.string().optional(),
+  demoObjectPath: z.string().optional(),
   audioParts: z.array(z.object({
     title: z.string().min(1, "Tytuł części jest wymagany"),
     partNumber: z.number().min(1),
@@ -156,6 +157,7 @@ export default function Admin() {
       newCategoryName: "",
       imageObjectPath: "",
       audioObjectPath: "",
+      demoObjectPath: "",
       audioParts: [],
       status: "draft",
     },
@@ -899,6 +901,73 @@ export default function Admin() {
                       )}
                     />
 
+                    <FormField
+                      control={form.control}
+                      name="demoObjectPath"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Plik Demo (Opcjonalny)</FormLabel>
+                          <FormControl>
+                            <div className="space-y-2">
+                              <Input
+                                placeholder="Ścieżka do pliku demo..."
+                                {...field}
+                              />
+                              <div className="flex gap-2">
+                                <ObjectUploader
+                                  maxNumberOfFiles={1}
+                                  maxFileSize={52428800} // 50MB for demo files
+                                  onGetUploadParameters={async () => {
+                                    const response = await apiRequest("POST", "/api/objects/upload");
+                                    const data = await response.json();
+                                    return {
+                                      method: "PUT" as const,
+                                      url: data.uploadURL,
+                                    };
+                                  }}
+                                  onComplete={async (result) => {
+                                    if (result.successful?.[0]?.uploadURL) {
+                                      const uploadUrl = result.successful[0].uploadURL;
+                                      try {
+                                        // Send the upload URL to backend to normalize the path
+                                        const response = await apiRequest("PUT", "/api/objects/normalize", { 
+                                          uploadURL: uploadUrl 
+                                        });
+                                        const data = await response.json();
+                                        // Set the normalized object path to the form field
+                                        field.onChange(data.objectPath);
+                                        toast({
+                                          title: "Sukces",
+                                          description: "Plik demo został przesłany pomyślnie",
+                                        });
+                                      } catch (error) {
+                                        console.error("Error normalizing path:", error);
+                                        // Fallback: use the upload URL directly
+                                        field.onChange(uploadUrl);
+                                        toast({
+                                          title: "Ostrzeżenie",
+                                          description: "Plik został przesłany, ale ścieżka może wymagać korekty",
+                                          variant: "destructive",
+                                        });
+                                      }
+                                    }
+                                  }}
+                                  buttonClassName="w-full"
+                                >
+                                  <Upload className="w-4 h-4 mr-2" />
+                                  Prześlij Demo
+                                </ObjectUploader>
+                              </div>
+                              <p className="text-sm text-gray-500">
+                                Prześlij krótki fragment podcastu (MP3, WAV) do odtwarzania jako demo
+                              </p>
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
                     {/* Sekcja dodatkowych części podcastu */}
                     <div className="space-y-4 border-t pt-4">
                       <div className="flex items-center justify-between">
@@ -1507,6 +1576,73 @@ export default function Admin() {
                           </div>
                           <p className="text-sm text-gray-500">
                             Prześlij plik audio (MP3, WAV, M4A) lub wklej ścieżkę do pliku w Object Storage
+                          </p>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="demoObjectPath"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Plik Demo (Opcjonalny)</FormLabel>
+                      <FormControl>
+                        <div className="space-y-2">
+                          <Input
+                            placeholder="Ścieżka do pliku demo..."
+                            {...field}
+                          />
+                          <div className="flex gap-2">
+                            <ObjectUploader
+                              maxNumberOfFiles={1}
+                              maxFileSize={52428800} // 50MB for demo files
+                              onGetUploadParameters={async () => {
+                                const response = await apiRequest("POST", "/api/objects/upload");
+                                const data = await response.json();
+                                return {
+                                  method: "PUT" as const,
+                                  url: data.uploadURL,
+                                };
+                              }}
+                              onComplete={async (result) => {
+                                if (result.successful?.[0]?.uploadURL) {
+                                  const uploadUrl = result.successful[0].uploadURL;
+                                  try {
+                                    // Send the upload URL to backend to normalize the path
+                                    const response = await apiRequest("PUT", "/api/objects/normalize", { 
+                                      uploadURL: uploadUrl 
+                                    });
+                                    const data = await response.json();
+                                    // Set the normalized object path to the form field
+                                    field.onChange(data.objectPath);
+                                    toast({
+                                      title: "Sukces",
+                                      description: "Plik demo został przesłany pomyślnie",
+                                    });
+                                  } catch (error) {
+                                    console.error("Error normalizing path:", error);
+                                    // Fallback: use the upload URL directly
+                                    field.onChange(uploadUrl);
+                                    toast({
+                                      title: "Ostrzeżenie",
+                                      description: "Plik został przesłany, ale ścieżka może wymagać korekty",
+                                      variant: "destructive",
+                                    });
+                                  }
+                                }
+                              }}
+                              buttonClassName="w-full"
+                            >
+                              <Upload className="w-4 h-4 mr-2" />
+                              Prześlij Demo
+                            </ObjectUploader>
+                          </div>
+                          <p className="text-sm text-gray-500">
+                            Prześlij krótki fragment podcastu (MP3, WAV) do odtwarzania jako demo
                           </p>
                         </div>
                       </FormControl>
