@@ -156,26 +156,44 @@ export class ObjectStorageService {
 
   // Gets the object entity file from the object path.
   async getObjectEntityFile(objectPath: string): Promise<File> {
+    console.log(`[OBJECT STORAGE] Getting object entity file for path: ${objectPath}`);
+    
     if (!objectPath.startsWith("/objects/")) {
+      console.log(`[OBJECT STORAGE] Path doesn't start with /objects/, got: ${objectPath}`);
       throw new ObjectNotFoundError();
     }
 
     const parts = objectPath.slice(1).split("/");
+    console.log(`[OBJECT STORAGE] Path parts:`, parts);
     if (parts.length < 2) {
+      console.log(`[OBJECT STORAGE] Not enough path parts, length: ${parts.length}`);
       throw new ObjectNotFoundError();
     }
 
     const entityId = parts.slice(1).join("/");
+    console.log(`[OBJECT STORAGE] Entity ID: ${entityId}`);
+    
     let entityDir = this.getPrivateObjectDir();
+    console.log(`[OBJECT STORAGE] Private object dir: ${entityDir}`);
     if (!entityDir.endsWith("/")) {
       entityDir = `${entityDir}/`;
     }
+    
     const objectEntityPath = `${entityDir}${entityId}`;
+    console.log(`[OBJECT STORAGE] Full object entity path: ${objectEntityPath}`);
+    
     const { bucketName, objectName } = parseObjectPath(objectEntityPath);
+    console.log(`[OBJECT STORAGE] Parsed - bucket: ${bucketName}, object: ${objectName}`);
+    
     const bucket = objectStorageClient.bucket(bucketName);
     const objectFile = bucket.file(objectName);
+    
+    console.log(`[OBJECT STORAGE] Checking if file exists in bucket...`);
     const [exists] = await objectFile.exists();
+    console.log(`[OBJECT STORAGE] File exists: ${exists}`);
+    
     if (!exists) {
+      console.log(`[OBJECT STORAGE] File not found in Google Cloud Storage`);
       throw new ObjectNotFoundError();
     }
     return objectFile;
