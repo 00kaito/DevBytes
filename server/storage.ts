@@ -4,18 +4,30 @@ import {
   podcasts,
   purchases,
   waitlist,
+  podcastParts,
+  podcastBundles,
+  bundlePodcasts,
   type UpsertUser,
   type User,
   type Category,
   type InsertCategory,
   type Podcast,
   type InsertPodcast,
+  type PodcastPart,
+  type InsertPodcastPart,
+  type PodcastBundle,
+  type InsertPodcastBundle,
+  type BundlePodcast,
+  type InsertBundlePodcast,
   type Purchase,
   type InsertPurchase,
   type Waitlist,
   type InsertWaitlist,
   type PodcastWithCategory,
+  type PodcastWithParts,
+  type PodcastBundleWithPodcasts,
   type PurchaseWithPodcast,
+  type PurchaseWithBundle,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, asc, or } from "drizzle-orm";
@@ -55,6 +67,26 @@ export interface IStorage {
   // Waitlist operations
   addToWaitlist(waitlistData: InsertWaitlist): Promise<Waitlist>;
   checkWaitlistEntry(email: string, podcastId: string): Promise<boolean>;
+
+  // Podcast parts operations
+  createPodcastPart(partData: InsertPodcastPart): Promise<PodcastPart>;
+  getPodcastParts(podcastId: string): Promise<PodcastPart[]>;
+  deletePodcastPart(id: string): Promise<boolean>;
+  getPodcastWithParts(id: string): Promise<PodcastWithParts | undefined>;
+
+  // Podcast bundle operations
+  createPodcastBundle(bundleData: InsertPodcastBundle): Promise<PodcastBundle>;
+  getAllPodcastBundles(): Promise<PodcastBundle[]>;
+  getPodcastBundle(id: string): Promise<PodcastBundle | undefined>;
+  getPodcastBundleWithPodcasts(id: string): Promise<PodcastBundleWithPodcasts | undefined>;
+  updatePodcastBundle(id: string, bundleData: Partial<InsertPodcastBundle>): Promise<PodcastBundle | undefined>;
+  deletePodcastBundle(id: string): Promise<boolean>;
+  addPodcastToBundle(bundleId: string, podcastId: string, orderIndex?: number): Promise<BundlePodcast>;
+  removePodcastFromBundle(bundleId: string, podcastId: string): Promise<boolean>;
+
+  // Enhanced purchase operations for bundles
+  addBundleToUserLibrary(userId: string, bundleId: string): Promise<Purchase>;
+  checkUserBundlePurchase(userId: string, bundleId: string): Promise<Purchase | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -367,6 +399,160 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Seed default admin user
+  // Podcast parts functions
+  async createPodcastPart(partData: InsertPodcastPart): Promise<PodcastPart> {
+    const [part] = await db
+      .insert(podcastParts)
+      .values(partData)
+      .returning();
+    return part;
+  }
+
+  async getPodcastParts(podcastId: string): Promise<PodcastPart[]> {
+    return await db
+      .select()
+      .from(podcastParts)
+      .where(eq(podcastParts.podcastId, podcastId))
+      .orderBy(asc(podcastParts.partNumber));
+  }
+
+  async deletePodcastPart(id: string): Promise<boolean> {
+    const result = await db
+      .delete(podcastParts)
+      .where(eq(podcastParts.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  async getPodcastWithParts(id: string): Promise<PodcastWithParts | undefined> {
+    const podcast = await this.getPodcast(id);
+    if (!podcast) return undefined;
+
+    const parts = await this.getPodcastParts(id);
+    return {
+      ...podcast,
+      parts,
+    };
+  }
+
+  // Podcast bundle functions
+  async createPodcastBundle(bundleData: InsertPodcastBundle): Promise<PodcastBundle> {
+    const [bundle] = await db
+      .insert(podcastBundles)
+      .values(bundleData)
+      .returning();
+    return bundle;
+  }
+
+  async getAllPodcastBundles(): Promise<PodcastBundle[]> {
+    return await db
+      .select()
+      .from(podcastBundles)
+      .where(eq(podcastBundles.isActive, true))
+      .orderBy(desc(podcastBundles.createdAt));
+  }
+
+  async getPodcastBundle(id: string): Promise<PodcastBundle | undefined> {
+    const [bundle] = await db
+      .select()
+      .from(podcastBundles)
+      .where(eq(podcastBundles.id, id));
+    return bundle;
+  }
+
+  async getPodcastBundleWithPodcasts(id: string): Promise<PodcastBundleWithPodcasts | undefined> {
+    const bundle = await this.getPodcastBundle(id);
+    if (!bundle) return undefined;
+
+    const bundlePodcastsData = await db
+      .select()
+      .from(bundlePodcasts)
+      .innerJoin(podcasts, eq(bundlePodcasts.podcastId, podcasts.id))
+      .innerJoin(categories, eq(podcasts.categoryId, categories.id))
+      .where(eq(bundlePodcasts.bundleId, id))
+      .orderBy(asc(bundlePodcasts.orderIndex));
+
+    return {
+      ...bundle,
+      bundlePodcasts: bundlePodcastsData.map(result => ({
+        ...result.bundle_podcasts,
+        podcast: {
+          ...result.podcasts,
+          category: result.categories,
+        },
+      })),
+    };
+  }
+
+  async updatePodcastBundle(id: string, bundleData: Partial<InsertPodcastBundle>): Promise<PodcastBundle | undefined> {
+    const [bundle] = await db
+      .update(podcastBundles)
+      .set({ ...bundleData, updatedAt: new Date() })
+      .where(eq(podcastBundles.id, id))
+      .returning();
+    return bundle;
+  }
+
+  async deletePodcastBundle(id: string): Promise<boolean> {
+    const result = await db
+      .delete(podcastBundles)
+      .where(eq(podcastBundles.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  async addPodcastToBundle(bundleId: string, podcastId: string, orderIndex: number = 0): Promise<BundlePodcast> {
+    const [bundlePodcast] = await db
+      .insert(bundlePodcasts)
+      .values({
+        bundleId,
+        podcastId,
+        orderIndex,
+      })
+      .returning();
+    return bundlePodcast;
+  }
+
+  async removePodcastFromBundle(bundleId: string, podcastId: string): Promise<boolean> {
+    const result = await db
+      .delete(bundlePodcasts)
+      .where(and(eq(bundlePodcasts.bundleId, bundleId), eq(bundlePodcasts.podcastId, podcastId)));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // Enhanced purchase functions for bundles
+  async addBundleToUserLibrary(userId: string, bundleId: string): Promise<Purchase> {
+    const bundle = await this.getPodcastBundle(bundleId);
+    if (!bundle) {
+      throw new Error("Bundle not found");
+    }
+
+    // Check if user already has this bundle
+    const existingPurchase = await this.checkUserBundlePurchase(userId, bundleId);
+    if (existingPurchase) {
+      throw new Error("User already owns this bundle");
+    }
+
+    const [purchase] = await db
+      .insert(purchases)
+      .values({
+        userId,
+        bundleId,
+        amount: bundle.price,
+        status: "completed",
+        stripePaymentIntentId: null,
+      })
+      .returning();
+    
+    return purchase;
+  }
+
+  async checkUserBundlePurchase(userId: string, bundleId: string): Promise<Purchase | undefined> {
+    const [purchase] = await db
+      .select()
+      .from(purchases)
+      .where(and(eq(purchases.userId, userId), eq(purchases.bundleId, bundleId)));
+    return purchase;
+  }
+
   async seedDefaultAdmin(): Promise<void> {
     const adminEmail = "admin@admin.com";
     const adminPassword = "admin@admin.com"; // Same as email as requested
@@ -385,7 +571,7 @@ export class DatabaseStorage implements IStorage {
       
       await this.createUser({
         email: adminEmail,
-        password: hashedPassword,
+        passwordHash: hashedPassword,
         firstName: "Admin",
         lastName: "User",
         isAdmin: true
