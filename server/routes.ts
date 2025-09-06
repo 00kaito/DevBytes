@@ -472,6 +472,156 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin category creation endpoint
+  app.post("/api/admin/categories", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const category = await storage.createCategory(req.body);
+      res.status(201).json(category);
+    } catch (error) {
+      console.error("Error creating category:", error);
+      res.status(500).json({ message: "Failed to create category" });
+    }
+  });
+
+  // Admin podcast parts endpoints
+  app.post("/api/admin/podcasts/:podcastId/parts", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const partData = {
+        ...req.body,
+        podcastId: req.params.podcastId,
+      };
+      const part = await storage.createPodcastPart(partData);
+      res.status(201).json(part);
+    } catch (error) {
+      console.error("Error creating podcast part:", error);
+      res.status(500).json({ message: "Failed to create podcast part" });
+    }
+  });
+
+  app.get("/api/admin/podcasts/:podcastId/parts", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const parts = await storage.getPodcastParts(req.params.podcastId);
+      res.json(parts);
+    } catch (error) {
+      console.error("Error fetching podcast parts:", error);
+      res.status(500).json({ message: "Failed to fetch podcast parts" });
+    }
+  });
+
+  app.delete("/api/admin/podcasts/parts/:partId", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const deleted = await storage.deletePodcastPart(req.params.partId);
+      if (!deleted) {
+        return res.status(404).json({ message: "Podcast part not found" });
+      }
+      res.json({ message: "Podcast part deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting podcast part:", error);
+      res.status(500).json({ message: "Failed to delete podcast part" });
+    }
+  });
+
+  // Admin podcast bundle endpoints
+  app.get("/api/admin/bundles", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const bundles = await storage.getAllPodcastBundles();
+      res.json(bundles);
+    } catch (error) {
+      console.error("Error fetching bundles:", error);
+      res.status(500).json({ message: "Failed to fetch bundles" });
+    }
+  });
+
+  app.post("/api/admin/bundles", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const bundle = await storage.createPodcastBundle(req.body);
+      res.status(201).json(bundle);
+    } catch (error) {
+      console.error("Error creating bundle:", error);
+      res.status(500).json({ message: "Failed to create bundle" });
+    }
+  });
+
+  app.get("/api/admin/bundles/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const bundle = await storage.getPodcastBundleWithPodcasts(req.params.id);
+      if (!bundle) {
+        return res.status(404).json({ message: "Bundle not found" });
+      }
+      res.json(bundle);
+    } catch (error) {
+      console.error("Error fetching bundle:", error);
+      res.status(500).json({ message: "Failed to fetch bundle" });
+    }
+  });
+
+  app.put("/api/admin/bundles/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const bundle = await storage.updatePodcastBundle(req.params.id, req.body);
+      if (!bundle) {
+        return res.status(404).json({ message: "Bundle not found" });
+      }
+      res.json(bundle);
+    } catch (error) {
+      console.error("Error updating bundle:", error);
+      res.status(500).json({ message: "Failed to update bundle" });
+    }
+  });
+
+  app.delete("/api/admin/bundles/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const deleted = await storage.deletePodcastBundle(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Bundle not found" });
+      }
+      res.json({ message: "Bundle deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting bundle:", error);
+      res.status(500).json({ message: "Failed to delete bundle" });
+    }
+  });
+
+  app.post("/api/admin/bundles/:bundleId/podcasts/:podcastId", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { orderIndex = 0 } = req.body;
+      const bundlePodcast = await storage.addPodcastToBundle(req.params.bundleId, req.params.podcastId, orderIndex);
+      res.status(201).json(bundlePodcast);
+    } catch (error) {
+      console.error("Error adding podcast to bundle:", error);
+      res.status(500).json({ message: "Failed to add podcast to bundle" });
+    }
+  });
+
+  app.delete("/api/admin/bundles/:bundleId/podcasts/:podcastId", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const removed = await storage.removePodcastFromBundle(req.params.bundleId, req.params.podcastId);
+      if (!removed) {
+        return res.status(404).json({ message: "Podcast not found in bundle" });
+      }
+      res.json({ message: "Podcast removed from bundle successfully" });
+    } catch (error) {
+      console.error("Error removing podcast from bundle:", error);
+      res.status(500).json({ message: "Failed to remove podcast from bundle" });
+    }
+  });
+
+  app.post("/api/admin/users/:userId/bundles/:bundleId", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { userId, bundleId } = req.params;
+      const purchase = await storage.addBundleToUserLibrary(userId, bundleId);
+      res.status(201).json(purchase);
+    } catch (error) {
+      console.error("Error adding bundle to user library:", error);
+      if (error.message === "Bundle not found") {
+        return res.status(404).json({ message: "Bundle nie został znaleziony" });
+      }
+      if (error.message === "User already owns this bundle") {
+        return res.status(400).json({ message: "Użytkownik już posiada ten bundle" });
+      }
+      res.status(500).json({ message: "Błąd podczas dodawania bundla do biblioteki" });
+    }
+  });
+
   // Admin user management routes
   app.get("/api/admin/users", isAuthenticated, isAdmin, async (req, res) => {
     try {
