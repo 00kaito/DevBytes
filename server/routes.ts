@@ -38,7 +38,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
 // JWT Configuration - matching Spring Boot service
 const JWT_CONFIG = {
   // Use exact Base64 secret as specified
-  secret: 'bXlWZXJ5U2VjdXJlU2VjcmV0S2V5VGhhdElzTG9uZ0Vub3VnaEZvckhNQUNIUzI1NkFsZ29yaXRobQ==',
+  secret: Buffer.from('bXlWZXJ5U2VjdXJlU2VjcmV0S2V5VGhhdElzTG9uZ0Vub3VnaEZvckhNQUNIUzI1NkFsZ29yaXRobQ==', 'base64'),
   expiresIn: '24h', // Library handles conversion automatically
   issuer: 'replit-audio-service',
   audience: 'audio-client'
@@ -46,28 +46,22 @@ const JWT_CONFIG = {
 
 // Function to generate JWT token
 const generateJWT = (userId: string, userEmail?: string): string => {
-  const payload: any = {
+  const payload = {
     sub: userId,
     iss: JWT_CONFIG.issuer,
-    aud: JWT_CONFIG.audience
+    aud: JWT_CONFIG.audience,
+    ...(userEmail && { email: userEmail })
   };
   
-  // Add email only if provided
-  if (userEmail) {
-    payload.email = userEmail;
-  }
+  const options: jwt.SignOptions = {
+    expiresIn: '24h',
+    algorithm: 'HS256'
+  };
   
-  const token = jwt.sign(
-    payload,
-    JWT_CONFIG.secret,
-    {
-      expiresIn: JWT_CONFIG.expiresIn,
-      algorithm: 'HS256'
-    }
-  );
+  const token = jwt.sign(payload, JWT_CONFIG.secret, options);
 
   // Log Base64 secret and generated token for debugging/integration
-  console.log(`[JWT] Using Base64 secret: ${JWT_CONFIG.secret}`);
+  console.log(`[JWT] Using Base64 secret: bXlWZXJ5U2VjdXJlU2VjcmV0S2V5VGhhdElzTG9uZ0Vub3VnaEZvckhNQUNIUzI1NkFsZ29yaXRobQ==`);
   console.log(`[JWT] Generated token for user ${userEmail}: ${token}`);
   
   return token;
