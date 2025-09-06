@@ -30,7 +30,7 @@ import {
   type PurchaseWithBundle,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc, asc, or } from "drizzle-orm";
+import { eq, and, desc, asc, or, sql } from "drizzle-orm";
 
 export interface IStorage {
   // User operations (supports both Replit Auth and email/password auth)
@@ -47,6 +47,7 @@ export interface IStorage {
   getCategories(): Promise<Category[]>;
   getCategoryBySlug(slug: string): Promise<Category | undefined>;
   createCategory(category: InsertCategory): Promise<Category>;
+  deleteCategory(id: string): Promise<boolean>;
 
   // Podcast operations
   getPodcastsByCategory(categoryId: string): Promise<Podcast[]>;
@@ -63,6 +64,7 @@ export interface IStorage {
   checkUserPurchase(userId: string, podcastId: string): Promise<Purchase | undefined>;
   getPurchasesByUser(userId: string): Promise<Purchase[]>;
   addPodcastToUserLibrary(userId: string, podcastId: string): Promise<Purchase>;
+  removePodcastFromUserLibrary(userId: string, podcastId: string): Promise<boolean>;
 
   // Waitlist operations
   addToWaitlist(waitlistData: InsertWaitlist): Promise<Waitlist>;
@@ -143,6 +145,23 @@ export class DatabaseStorage implements IStorage {
       .values(categoryData)
       .returning();
     return category;
+  }
+
+  async deleteCategory(id: string): Promise<boolean> {
+    // First check if any podcasts use this category
+    const podcastsInCategory = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(podcasts)
+      .where(eq(podcasts.categoryId, id));
+    
+    if (podcastsInCategory[0]?.count > 0) {
+      throw new Error("Cannot delete category with associated podcasts");
+    }
+
+    const result = await db
+      .delete(categories)
+      .where(eq(categories.id, id));
+    return (result.rowCount || 0) > 0;
   }
 
   async getPodcastsByCategory(categoryId: string): Promise<PodcastWithCategory[]> {
@@ -345,6 +364,13 @@ export class DatabaseStorage implements IStorage {
       .returning();
     
     return purchase;
+  }
+
+  async removePodcastFromUserLibrary(userId: string, podcastId: string): Promise<boolean> {
+    const result = await db
+      .delete(purchases)
+      .where(and(eq(purchases.userId, userId), eq(purchases.podcastId, podcastId)));
+    return (result.rowCount || 0) > 0;
   }
 
   async getUserPurchases(userId: string): Promise<PurchaseWithPodcast[]> {

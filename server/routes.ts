@@ -483,6 +483,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin category deletion endpoint
+  app.delete("/api/admin/categories/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const deleted = await storage.deleteCategory(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Category not found" });
+      }
+      res.json({ message: "Category deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting category:", error);
+      if (error instanceof Error && error.message.includes("Cannot delete category with associated podcasts")) {
+        return res.status(400).json({ message: "Nie można usunąć kategorii, która zawiera podcasty" });
+      }
+      res.status(500).json({ message: "Failed to delete category" });
+    }
+  });
+
   // Admin podcast parts endpoints
   app.post("/api/admin/podcasts/:podcastId/parts", isAuthenticated, isAdmin, async (req, res) => {
     try {
@@ -671,6 +688,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
           error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
         });
       }
+    }
+  });
+
+  app.delete("/api/admin/users/:userId/remove-podcast/:podcastId", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { userId, podcastId } = req.params;
+      console.log(`[ADMIN] Removing podcast ${podcastId} from user ${userId} library`);
+      
+      const removed = await storage.removePodcastFromUserLibrary(userId, podcastId);
+      if (!removed) {
+        return res.status(404).json({ message: "Podcast nie został znaleziony w bibliotece użytkownika" });
+      }
+      
+      console.log(`[ADMIN] Successfully removed podcast from user library`);
+      res.json({ message: "Podcast został usunięty z biblioteki użytkownika" });
+    } catch (error: any) {
+      console.error("[ADMIN] Error removing podcast from user library:", {
+        message: error.message,
+        stack: error.stack,
+        userId: req.params.userId,
+        podcastId: req.params.podcastId,
+        adminUserId: (req as any).session?.userId,
+        timestamp: new Date().toISOString()
+      });
+      
+      res.status(500).json({ 
+        message: "Nie udało się usunąć podcastu z biblioteki",
+        error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+      });
     }
   });
 
