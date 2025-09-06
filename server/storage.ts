@@ -24,6 +24,7 @@ export interface IStorage {
   // User operations (supports both Replit Auth and email/password auth)
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
+  getAllUsers(): Promise<User[]>;
   createUser(user: UpsertUser): Promise<User>;
   updateUser(id: string, user: Partial<UpsertUser>): Promise<User>;
   upsertUser(user: UpsertUser): Promise<User>;
@@ -49,6 +50,7 @@ export interface IStorage {
   getUserPurchases(userId: string): Promise<PurchaseWithPodcast[]>;
   checkUserPurchase(userId: string, podcastId: string): Promise<Purchase | undefined>;
   getPurchasesByUser(userId: string): Promise<Purchase[]>;
+  addPodcastToUserLibrary(userId: string, podcastId: string): Promise<Purchase>;
 
   // Waitlist operations
   addToWaitlist(waitlistData: InsertWaitlist): Promise<Waitlist>;
@@ -189,6 +191,10 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users).orderBy(asc(users.email));
+  }
+
   async createUser(userData: UpsertUser): Promise<User> {
     const [user] = await db.insert(users).values(userData).returning();
     return user;
@@ -278,6 +284,34 @@ export class DatabaseStorage implements IStorage {
       .insert(purchases)
       .values(purchaseData)
       .returning();
+    return purchase;
+  }
+
+  async addPodcastToUserLibrary(userId: string, podcastId: string): Promise<Purchase> {
+    // Get podcast to check price
+    const podcast = await this.getPodcast(podcastId);
+    if (!podcast) {
+      throw new Error("Podcast not found");
+    }
+
+    // Check if user already has this podcast
+    const existingPurchase = await this.checkUserPurchase(userId, podcastId);
+    if (existingPurchase) {
+      throw new Error("User already owns this podcast");
+    }
+
+    // Create purchase record without payment (admin action)
+    const [purchase] = await db
+      .insert(purchases)
+      .values({
+        userId,
+        podcastId,
+        amount: podcast.price,
+        status: "completed",
+        stripePaymentIntentId: null, // No payment required for admin action
+      })
+      .returning();
+    
     return purchase;
   }
 

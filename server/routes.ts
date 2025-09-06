@@ -472,6 +472,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin user management routes
+  app.get("/api/admin/users", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      console.log("[ADMIN] Fetching all users...");
+      const allUsers = await storage.getAllUsers();
+      console.log(`[ADMIN] Successfully fetched ${allUsers.length} users`);
+      res.json(allUsers);
+    } catch (error: any) {
+      console.error("[ADMIN] Error fetching users:", {
+        message: error.message,
+        stack: error.stack,
+        userId: (req as any).session?.userId,
+        timestamp: new Date().toISOString()
+      });
+      res.status(500).json({ 
+        message: "Failed to fetch users",
+        error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+      });
+    }
+  });
+
+  app.post("/api/admin/users/:userId/add-podcast/:podcastId", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { userId, podcastId } = req.params;
+      console.log(`[ADMIN] Adding podcast ${podcastId} to user ${userId} library`);
+      
+      const purchase = await storage.addPodcastToUserLibrary(userId, podcastId);
+      console.log(`[ADMIN] Successfully added podcast to user library: ${purchase.id}`);
+      res.status(201).json(purchase);
+    } catch (error: any) {
+      console.error("[ADMIN] Error adding podcast to user library:", {
+        message: error.message,
+        stack: error.stack,
+        userId: req.params.userId,
+        podcastId: req.params.podcastId,
+        adminUserId: (req as any).session?.userId,
+        timestamp: new Date().toISOString()
+      });
+      
+      if (error.message === "User already owns this podcast") {
+        res.status(400).json({ message: "Ten użytkownik już posiada ten podcast w bibliotece" });
+      } else if (error.message === "Podcast not found") {
+        res.status(404).json({ message: "Podcast nie został znaleziony" });
+      } else {
+        res.status(500).json({ 
+          message: "Nie udało się dodać podcastu do biblioteki",
+          error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+        });
+      }
+    }
+  });
+
   // Purchase routes
   app.post("/api/create-payment-intent", isAuthenticated, async (req: any, res) => {
     try {

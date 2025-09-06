@@ -31,8 +31,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
-import { Plus, Edit, Trash2, ArrowLeft, LogOut, Settings, Upload } from "lucide-react";
-import type { Podcast, Category } from "@shared/schema";
+import { Plus, Edit, Trash2, ArrowLeft, LogOut, Settings, Upload, Users, BookOpen } from "lucide-react";
+import type { Podcast, Category, User } from "@shared/schema";
 import SimpleEditor from "@/components/SimpleEditor";
 import { ObjectUploader } from "@/components/ObjectUploader";
 
@@ -56,6 +56,9 @@ export default function Admin() {
   const queryClient = useQueryClient();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingPodcast, setEditingPodcast] = useState<Podcast | null>(null);
+  const [activeTab, setActiveTab] = useState<"podcasts" | "users">("podcasts");
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [isUserLibraryDialogOpen, setIsUserLibraryDialogOpen] = useState(false);
 
   // Redirect to home if not authenticated
   useEffect(() => {
@@ -110,6 +113,12 @@ export default function Admin() {
   const { data: categories } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
     enabled: isAuthenticated,
+  });
+
+  const { data: users, isLoading: usersLoading } = useQuery<User[]>({
+    queryKey: ["/api/admin/users"],
+    enabled: isAuthenticated && activeTab === "users",
+    retry: false,
   });
 
   const form = useForm<PodcastFormData>({
@@ -226,6 +235,38 @@ export default function Admin() {
     },
   });
 
+  const addPodcastToLibraryMutation = useMutation({
+    mutationFn: async ({ userId, podcastId }: { userId: string; podcastId: string }) => {
+      const response = await apiRequest("POST", `/api/admin/users/${userId}/add-podcast/${podcastId}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      setIsUserLibraryDialogOpen(false);
+      toast({
+        title: "Sukces",
+        description: "Podcast został dodany do biblioteki użytkownika",
+      });
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error as Error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Błąd",
+        description: "Nie udało się dodać podcastu do biblioteki",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleLogout = () => {
     logoutMutation.mutate();
   };
@@ -331,8 +372,41 @@ export default function Admin() {
       {/* Admin Content */}
       <section className="py-8 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center mb-8">
-            <h1 className="text-3xl font-bold">Zarządzanie Podcastami</h1>
+          {/* Tab Navigation */}
+          <div className="mb-8">
+            <div className="border-b border-gray-200">
+              <nav className="-mb-px flex space-x-8">
+                <button
+                  onClick={() => setActiveTab("podcasts")}
+                  className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                    activeTab === "podcasts"
+                      ? "border-blue-500 text-blue-600"
+                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  }`}
+                >
+                  <Settings className="w-4 h-4 inline mr-2" />
+                  Zarządzanie Podcastami
+                </button>
+                <button
+                  onClick={() => setActiveTab("users")}
+                  className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                    activeTab === "users"
+                      ? "border-blue-500 text-blue-600"
+                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  }`}
+                >
+                  <Users className="w-4 h-4 inline mr-2" />
+                  Zarządzanie Użytkownikami
+                </button>
+              </nav>
+            </div>
+          </div>
+
+          {/* Podcasts Tab */}
+          {activeTab === "podcasts" && (
+            <>
+              <div className="flex justify-between items-center mb-8">
+                <h1 className="text-3xl font-bold">Zarządzanie Podcastami</h1>
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
                 <Button 
@@ -660,6 +734,62 @@ export default function Admin() {
               <p className="text-slate-500 mb-6">Dodaj pierwszy podcast aby rozpocząć zarządzanie treścią</p>
             </div>
           )}
+            </>
+          )}
+
+          {/* Users Tab */}
+          {activeTab === "users" && (
+            <>
+              <div className="flex justify-between items-center mb-8">
+                <h1 className="text-3xl font-bold">Zarządzanie Użytkownikami</h1>
+              </div>
+
+              {/* Users List */}
+              {usersLoading ? (
+                <div className="flex justify-center py-16">
+                  <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full" />
+                </div>
+              ) : users && users.length > 0 ? (
+                <div className="space-y-4">
+                  {users.map((user) => (
+                    <Card key={user.id} className="p-6 border border-slate-200">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <h3 className="text-xl font-semibold mb-2">
+                            {user.firstName} {user.lastName}
+                          </h3>
+                          <p className="text-slate-600 mb-2">{user.email}</p>
+                          <div className="flex space-x-4 text-sm text-slate-500">
+                            <span>Admin: {user.isAdmin ? "Tak" : "Nie"}</span>
+                            <span>Zweryfikowany: {user.isEmailVerified ? "Tak" : "Nie"}</span>
+                          </div>
+                        </div>
+                        <div className="flex space-x-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedUser(user);
+                              setIsUserLibraryDialogOpen(true);
+                            }}
+                          >
+                            <BookOpen className="h-4 w-4 mr-2" />
+                            Dodaj do biblioteki
+                          </Button>
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-16">
+                  <Users className="h-16 w-16 text-slate-300 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-slate-600 mb-2">Brak użytkowników</h3>
+                  <p className="text-slate-500 mb-6">Nie znaleziono użytkowników w systemie</p>
+                </div>
+              )}
+            </>
+          )}
         </div>
       </section>
 
@@ -916,6 +1046,75 @@ export default function Admin() {
                 </div>
               </form>
             </Form>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* User Library Management Dialog */}
+      {selectedUser && (
+        <Dialog open={isUserLibraryDialogOpen} onOpenChange={setIsUserLibraryDialogOpen}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>
+                Dodaj podcast do biblioteki: {selectedUser.firstName} {selectedUser.lastName}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <p className="text-slate-600">
+                Wybierz podcast, który chcesz dodać do biblioteki użytkownika {selectedUser.email}
+              </p>
+              
+              {podcasts && podcasts.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-96 overflow-y-auto">
+                  {podcasts.map((podcast) => (
+                    <Card key={podcast.id} className="p-4 border border-slate-200 hover:border-blue-300 transition-colors">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <h4 className="font-semibold mb-2">{podcast.title}</h4>
+                          <p className="text-sm text-slate-600 mb-3 line-clamp-2">{podcast.description}</p>
+                          <div className="flex space-x-4 text-xs text-slate-500">
+                            <span>Czas: {podcast.duration} min</span>
+                            <span>Cena: {formatPrice(podcast.price)}</span>
+                            <span>Stan: {podcast.status}</span>
+                          </div>
+                        </div>
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            addPodcastToLibraryMutation.mutate({
+                              userId: selectedUser.id,
+                              podcastId: podcast.id,
+                            });
+                          }}
+                          disabled={addPodcastToLibraryMutation.isPending}
+                        >
+                          <Plus className="h-4 w-4 mr-1" />
+                          Dodaj
+                        </Button>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Settings className="h-12 w-12 text-slate-300 mx-auto mb-4" />
+                  <p className="text-slate-500">Brak dostępnych podcastów</p>
+                </div>
+              )}
+              
+              <div className="flex justify-end space-x-4 pt-4 border-t">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setIsUserLibraryDialogOpen(false);
+                    setSelectedUser(null);
+                  }}
+                >
+                  Anuluj
+                </Button>
+              </div>
+            </div>
           </DialogContent>
         </Dialog>
       )}
