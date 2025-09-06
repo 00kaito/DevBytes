@@ -41,10 +41,18 @@ const podcastFormSchema = z.object({
   slug: z.string().min(1, "Slug jest wymagany"),
   description: z.string().optional(),
   duration: z.number().min(1, "Czas trwania musi być większy niż 0"),
+  originalPrice: z.number().min(1, "Cena przed rabatem musi być większa niż 0"),
   price: z.number().min(1, "Cena musi być większa niż 0"),
   categoryId: z.string().min(1, "Kategoria jest wymagana"),
+  newCategoryName: z.string().optional(),
   imageObjectPath: z.string().optional(),
   audioObjectPath: z.string().optional(),
+  audioParts: z.array(z.object({
+    title: z.string().min(1, "Tytuł części jest wymagany"),
+    partNumber: z.number().min(1),
+    duration: z.number().min(1),
+    audioObjectPath: z.string().min(1, "Plik audio jest wymagany"),
+  })).optional(),
   status: z.enum(["draft", "public", "coming_soon"]),
 });
 
@@ -128,10 +136,13 @@ export default function Admin() {
       slug: "",
       description: "",
       duration: 30,
+      originalPrice: 3500,
       price: 2900,
       categoryId: "",
+      newCategoryName: "",
       imageObjectPath: "",
       audioObjectPath: "",
+      audioParts: [],
       status: "draft",
     },
   });
@@ -271,7 +282,7 @@ export default function Admin() {
     logoutMutation.mutate();
   };
 
-  const onSubmit = (data: PodcastFormData) => {
+  const onSubmit = async (data: PodcastFormData) => {
     console.log('[ADMIN FORM] Submitting form with data:', {
       formData: data,
       hasStatus: 'status' in data,
@@ -279,10 +290,62 @@ export default function Admin() {
       isEditing: !!editingPodcast
     });
     
-    if (editingPodcast) {
-      updateMutation.mutate({ id: editingPodcast.id, data });
-    } else {
-      createMutation.mutate(data);
+    try {
+      let finalData = { ...data };
+
+      // Jeśli wybrano "new" jako kategorię, najpierw utwórz nową kategorię
+      if (data.categoryId === "new" && data.newCategoryName) {
+        const categoryResponse = await apiRequest("POST", "/api/admin/categories", {
+          name: data.newCategoryName,
+          slug: generateSlug(data.newCategoryName),
+          description: `Kategoria: ${data.newCategoryName}`,
+        });
+        const newCategory = await categoryResponse.json();
+        finalData.categoryId = newCategory.id;
+        
+        // Odśwież listę kategorii
+        queryClient.invalidateQueries({ queryKey: ["/api/categories"] });
+        
+        toast({
+          title: "Sukces",
+          description: `Kategoria "${data.newCategoryName}" została utworzona`,
+        });
+      }
+
+      // Usuń pole newCategoryName przed wysłaniem do API podcastu
+      const { newCategoryName, audioParts, ...podcastData } = finalData;
+      
+      if (editingPodcast) {
+        updateMutation.mutate({ id: editingPodcast.id, data: podcastData });
+      } else {
+        // Najpierw utwórz podcast
+        const podcastResponse = await apiRequest("POST", "/api/admin/podcasts", podcastData);
+        const podcast = await podcastResponse.json();
+        
+        // Następnie dodaj części podcastu jeśli istnieją
+        if (audioParts && audioParts.length > 0) {
+          for (const part of audioParts) {
+            if (part.title && part.audioObjectPath) {
+              await apiRequest("POST", `/api/admin/podcasts/${podcast.id}/parts`, part);
+            }
+          }
+        }
+        
+        queryClient.invalidateQueries({ queryKey: ["/api/admin/podcasts"] });
+        setIsAddDialogOpen(false);
+        form.reset();
+        toast({
+          title: "Sukces",
+          description: `Podcast "${podcast.title}" został dodany pomyślnie`,
+        });
+      }
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      toast({
+        title: "Błąd",
+        description: "Nie udało się zapisać podcastu",
+        variant: "destructive",
+      });
     }
   };
 
@@ -301,6 +364,7 @@ export default function Admin() {
       slug: podcast.slug,
       description: podcast.description || "",
       duration: podcast.duration || 30,
+      originalPrice: podcast.originalPrice || podcast.price,
       price: podcast.price,
       categoryId: podcast.categoryId,
       imageObjectPath: podcast.imageObjectPath || "",
@@ -487,7 +551,7 @@ export default function Admin() {
                         </FormItem>
                       )}
                     />
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-3 gap-4">
                       <FormField
                         control={form.control}
                         name="duration"
@@ -507,10 +571,27 @@ export default function Admin() {
                       />
                       <FormField
                         control={form.control}
+                        name="originalPrice"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Cena przed rabatem (grosze)</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                {...field}
+                                onChange={(e) => field.onChange(parseInt(e.target.value))}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
                         name="price"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Cena (grosze)</FormLabel>
+                            <FormLabel>Cena po rabacie (grosze)</FormLabel>
                             <FormControl>
                               <Input
                                 type="number"
@@ -523,30 +604,51 @@ export default function Admin() {
                         )}
                       />
                     </div>
-                    <FormField
-                      control={form.control}
-                      name="categoryId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Kategoria</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Wybierz kategorię" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {categories?.map((category) => (
-                                <SelectItem key={category.id} value={category.id}>
-                                  {category.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
+                    <div className="space-y-4">
+                      <FormField
+                        control={form.control}
+                        name="categoryId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Kategoria</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Wybierz kategorię lub utwórz nową" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {categories?.map((category) => (
+                                  <SelectItem key={category.id} value={category.id}>
+                                    {category.name}
+                                  </SelectItem>
+                                ))}
+                                <SelectItem value="new">+ Utwórz nową kategorię</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      {form.watch("categoryId") === "new" && (
+                        <FormField
+                          control={form.control}
+                          name="newCategoryName"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Nazwa nowej kategorii</FormLabel>
+                              <FormControl>
+                                <Input
+                                  placeholder="Wprowadź nazwę kategorii..."
+                                  {...field}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
                       )}
-                    />
+                    </div>
                     <FormField
                       control={form.control}
                       name="imageObjectPath"
@@ -635,6 +737,146 @@ export default function Admin() {
                         </FormItem>
                       )}
                     />
+
+                    {/* Sekcja dodatkowych części podcastu */}
+                    <div className="space-y-4 border-t pt-4">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-lg font-medium">Dodatkowe części podcastu (opcjonalne)</h4>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const currentParts = form.getValues("audioParts") || [];
+                            form.setValue("audioParts", [
+                              ...currentParts,
+                              {
+                                title: "",
+                                partNumber: currentParts.length + 1,
+                                duration: 30,
+                                audioObjectPath: "",
+                              },
+                            ]);
+                          }}
+                        >
+                          <Plus className="w-4 h-4 mr-2" />
+                          Dodaj część
+                        </Button>
+                      </div>
+                      
+                      {form.watch("audioParts")?.map((part, index) => (
+                        <div key={index} className="space-y-3 p-4 border rounded-lg bg-gray-50">
+                          <div className="flex items-center justify-between">
+                            <h5 className="font-medium">Część {index + 1}</h5>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                const currentParts = form.getValues("audioParts") || [];
+                                const newParts = currentParts.filter((_, i) => i !== index);
+                                // Update part numbers
+                                newParts.forEach((p, i) => p.partNumber = i + 1);
+                                form.setValue("audioParts", newParts);
+                              }}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                          
+                          <div className="grid grid-cols-3 gap-3">
+                            <FormField
+                              control={form.control}
+                              name={`audioParts.${index}.title`}
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Tytuł części</FormLabel>
+                                  <FormControl>
+                                    <Input
+                                      placeholder="Np. Wprowadzenie"
+                                      {...field}
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            
+                            <FormField
+                              control={form.control}
+                              name={`audioParts.${index}.duration`}
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Czas (minuty)</FormLabel>
+                                  <FormControl>
+                                    <Input
+                                      type="number"
+                                      {...field}
+                                      onChange={(e) => field.onChange(parseInt(e.target.value))}
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            
+                            <FormField
+                              control={form.control}
+                              name={`audioParts.${index}.audioObjectPath`}
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Plik audio</FormLabel>
+                                  <FormControl>
+                                    <div className="space-y-2">
+                                      <Input
+                                        placeholder="Ścieżka do pliku..."
+                                        {...field}
+                                      />
+                                      <ObjectUploader
+                                        maxNumberOfFiles={1}
+                                        maxFileSize={104857600}
+                                        onGetUploadParameters={async () => {
+                                          const response = await apiRequest("POST", "/api/objects/upload");
+                                          const data = await response.json();
+                                          return {
+                                            method: "PUT" as const,
+                                            url: data.uploadURL,
+                                          };
+                                        }}
+                                        onComplete={async (result) => {
+                                          if (result.successful?.[0]?.uploadURL) {
+                                            const uploadUrl = result.successful[0].uploadURL;
+                                            try {
+                                              const response = await apiRequest("PUT", "/api/objects/normalize", { 
+                                                uploadURL: uploadUrl 
+                                              });
+                                              const data = await response.json();
+                                              field.onChange(data.objectPath);
+                                              toast({
+                                                title: "Sukces",
+                                                description: `Plik audio części ${index + 1} został przesłany`,
+                                              });
+                                            } catch (error) {
+                                              console.error("Error normalizing path:", error);
+                                              field.onChange(uploadUrl);
+                                            }
+                                          }
+                                        }}
+                                        buttonClassName="w-full text-xs"
+                                      >
+                                        <Upload className="w-3 h-3 mr-1" />
+                                        Prześlij
+                                      </ObjectUploader>
+                                    </div>
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
 
                     <FormField
                       control={form.control}
