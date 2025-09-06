@@ -931,7 +931,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Demo audio files serving (public access)
   app.get("/api/objects/:objectPath(*)", async (req, res) => {
-    const objectPath = req.params.objectPath;
+    const objectPath = `/${req.params.objectPath}`; // Add leading slash
     const objectStorageService = new ObjectStorageService();
     
     try {
