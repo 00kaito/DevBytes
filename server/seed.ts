@@ -61,7 +61,8 @@ async function seedDatabase() {
         slug: "java-map-collections",
         description: "Głęboka analiza HashMap, LinkedHashMap, TreeMap. Jak działają pod spodem, kiedy używać każdej z nich i najczęstsze pułapki.",
         duration: 45,
-        price: 2900, // 29 zł in grosze
+        originalPrice: 3500, // 35 zł in grosze
+        price: 2900, // 29 zł in grosze (cena po rabacie)
         categoryId: javaCategory.id,
         isActive: true,
       },
@@ -70,7 +71,8 @@ async function seedDatabase() {
         slug: "java-set-collections",
         description: "HashSet vs LinkedHashSet vs TreeSet. Implementacja, wydajność i praktyczne zastosowania w projektach enterprise.",
         duration: 38,
-        price: 2900, // 29 zł
+        originalPrice: 3500,
+        price: 2900, // 29 zł (cena po rabacie)
         categoryId: javaCategory.id,
         isActive: true,
       },
@@ -79,7 +81,8 @@ async function seedDatabase() {
         slug: "java-concurrency",
         description: "Wielowątkowość od podstaw: synchronized, volatile, Executor Framework, CompletableFuture i unikanie deadlocków.",
         duration: 52,
-        price: 3900, // 39 zł
+        originalPrice: 4500,
+        price: 3900, // 39 zł (cena po rabacie)
         categoryId: javaCategory.id,
         isActive: true,
       },
@@ -88,7 +91,8 @@ async function seedDatabase() {
         slug: "java-memory-model",
         description: "Jak działa pamięć w JVM: heap, stack, method area, happens-before i optymalizacje JIT compiler.",
         duration: 48,
-        price: 3500, // 35 zł
+        originalPrice: 4000,
+        price: 3500, // 35 zł (cena po rabacie)
         categoryId: javaCategory.id,
         isActive: true,
       },
@@ -97,7 +101,8 @@ async function seedDatabase() {
         slug: "java-garbage-collection",
         description: "G1, ZGC, Parallel GC - jak wybrać odpowiedni collector, tuning JVM i analiza memory leaków.",
         duration: 41,
-        price: 3500, // 35 zł
+        originalPrice: 4000,
+        price: 3500, // 35 zł (cena po rabacie)
         categoryId: javaCategory.id,
         isActive: true,
       },
@@ -107,7 +112,8 @@ async function seedDatabase() {
         slug: "js-event-loop",
         description: "Call stack, message queue, micro/macro tasks. Jak działa Promise, async/await i dlaczego setTimeout(0) nie zawsze działa.",
         duration: 43,
-        price: 3200, // 32 zł
+        originalPrice: 3700,
+        price: 3200, // 32 zł (cena po rabacie)
         categoryId: jsCategory.id,
         isActive: true,
       },
@@ -116,7 +122,8 @@ async function seedDatabase() {
         slug: "js-prototypes",
         description: "Prototype chain, __proto__ vs prototype, dziedziczenie w JS vs class syntax. Dlaczego this jest problematyczne.",
         duration: 39,
-        price: 2900, // 29 zł
+        originalPrice: 3400,
+        price: 2900, // 29 zł (cena po rabacie)
         categoryId: jsCategory.id,
         isActive: true,
       },
@@ -125,7 +132,8 @@ async function seedDatabase() {
         slug: "js-v8-optimizations",
         description: "Hidden classes, inline caching, TurboFan compiler. Jak pisać JavaScript, który będzie szybko wykonywany.",
         duration: 36,
-        price: 3500, // 35 zł
+        originalPrice: 4000,
+        price: 3500, // 35 zł (cena po rabacie)
         categoryId: jsCategory.id,
         isActive: true,
       },
@@ -135,7 +143,8 @@ async function seedDatabase() {
         slug: "azure-functions",
         description: "Serverless architecture, cold starts, bindings i triggers. Monitoring, performance tuning i cost optimization.",
         duration: 47,
-        price: 4200, // 42 zł
+        originalPrice: 4900,
+        price: 4200, // 42 zł (cena po rabacie)
         categoryId: azureCategory.id,
         isActive: true,
       },
@@ -144,7 +153,8 @@ async function seedDatabase() {
         slug: "azure-cosmos-db",
         description: "Multi-model database, consistency levels, partitioning strategies. Global distribution i request units optimization.",
         duration: 52,
-        price: 4500, // 45 zł
+        originalPrice: 5200,
+        price: 4500, // 45 zł (cena po rabacie)
         categoryId: azureCategory.id,
         isActive: true,
       },
@@ -154,7 +164,8 @@ async function seedDatabase() {
         slug: "arch-microservices",
         description: "Service discovery, circuit breaker, saga pattern. Distributed transactions i eventual consistency.",
         duration: 55,
-        price: 4900, // 49 zł
+        originalPrice: 5700,
+        price: 4900, // 49 zł (cena po rabacie)
         categoryId: archCategory.id,
         isActive: true,
       },
@@ -163,7 +174,8 @@ async function seedDatabase() {
         slug: "arch-ddd",
         description: "Bounded contexts, aggregates, value objects. Event sourcing i CQRS w praktyce enterprise.",
         duration: 48,
-        price: 5200, // 52 zł
+        originalPrice: 6000,
+        price: 5200, // 52 zł (cena po rabacie)
         categoryId: archCategory.id,
         isActive: true,
       },
