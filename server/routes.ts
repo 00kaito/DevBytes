@@ -627,7 +627,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { userId, bundleId } = req.params;
       const purchase = await storage.addBundleToUserLibrary(userId, bundleId);
       res.status(201).json(purchase);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error adding bundle to user library:", error);
       if (error.message === "Bundle not found") {
         return res.status(404).json({ message: "Bundle nie został znaleziony" });
@@ -915,11 +915,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`[AUDIO DOWNLOAD] Successfully found file, streaming to client`);
       objectStorageService.downloadObject(objectFile, res);
-    } catch (error) {
+    } catch (error: any) {
       console.error(`[AUDIO DOWNLOAD] Error downloading podcast audio for ${podcastId}:`, {
         error: error.message,
         stack: error.stack,
-        audioPath: podcast?.audioObjectPath,
+        audioPath: "unknown",
         podcastId: podcastId
       });
       if (error instanceof ObjectNotFoundError) {
