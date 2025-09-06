@@ -32,7 +32,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
 import { Plus, Edit, Trash2, ArrowLeft, LogOut, Settings, Upload, Users, BookOpen } from "lucide-react";
-import type { Podcast, Category, User } from "@shared/schema";
+import type { Podcast, Category, User, PurchaseWithPodcast } from "@shared/schema";
 import SimpleEditor from "@/components/SimpleEditor";
 import { ObjectUploader } from "@/components/ObjectUploader";
 
@@ -127,6 +127,12 @@ export default function Admin() {
     queryKey: ["/api/admin/users"],
     enabled: isAuthenticated && activeTab === "users",
     retry: false,
+  });
+
+  // Query for user purchases when a user is selected
+  const { data: userPurchases, isLoading: userPurchasesLoading } = useQuery<PurchaseWithPodcast[]>({
+    queryKey: ["/api/admin/users", selectedUser?.id, "purchases"],
+    enabled: !!selectedUser && isUserLibraryDialogOpen,
   });
 
   const form = useForm<PodcastFormData>({
@@ -251,12 +257,13 @@ export default function Admin() {
       const response = await apiRequest("POST", `/api/admin/users/${userId}/add-podcast/${podcastId}`);
       return response.json();
     },
-    onSuccess: () => {
-      setIsUserLibraryDialogOpen(false);
+    onSuccess: (_, { userId }) => {
       toast({
         title: "Sukces",
         description: "Podcast został dodany do biblioteki użytkownika",
       });
+      // Refresh user purchases
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users", userId, "purchases"] });
     },
     onError: (error) => {
       if (isUnauthorizedError(error as Error)) {
@@ -283,12 +290,13 @@ export default function Admin() {
       const response = await apiRequest("DELETE", `/api/admin/users/${userId}/remove-podcast/${podcastId}`);
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (_, { userId }) => {
       toast({
         title: "Sukces",
         description: "Podcast został usunięty z biblioteki użytkownika",
       });
-      // Refresh user purchases if needed
+      // Refresh user purchases
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users", userId, "purchases"] });
       queryClient.invalidateQueries({ queryKey: ["/api/user/purchases"] });
     },
     onError: (error) => {
@@ -1443,11 +1451,46 @@ export default function Admin() {
                   Posiadane podcasty
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-48 overflow-y-auto border-2 border-green-100 rounded-lg p-4">
-                  {/* TODO: Show owned podcasts here */}
-                  <div className="text-center py-8 col-span-full">
-                    <BookOpen className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-                    <p className="text-slate-500">Brak podcastów w bibliotece</p>
-                  </div>
+                  {userPurchasesLoading ? (
+                    <div className="flex justify-center py-8 col-span-full">
+                      <div className="animate-spin w-8 h-8 border-4 border-green-600 border-t-transparent rounded-full" />
+                    </div>
+                  ) : userPurchases && userPurchases.length > 0 ? (
+                    userPurchases.map((purchase) => (
+                      <Card key={purchase.id} className="p-4 border border-green-200 hover:border-green-300 transition-colors">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <h4 className="font-semibold mb-2">{purchase.podcast.title}</h4>
+                            <p className="text-sm text-slate-600 mb-3 line-clamp-2">{purchase.podcast.description}</p>
+                            <div className="flex space-x-4 text-xs text-slate-500">
+                              <span>Czas: {purchase.podcast.duration} min</span>
+                              <span>Cena: {formatPrice(purchase.podcast.price)}</span>
+                              <span>Stan: {purchase.podcast.status}</span>
+                            </div>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => {
+                              removePodcastFromLibraryMutation.mutate({
+                                userId: selectedUser.id,
+                                podcastId: purchase.podcast.id,
+                              });
+                            }}
+                            disabled={removePodcastFromLibraryMutation.isPending}
+                          >
+                            <Trash2 className="h-4 w-4 mr-1" />
+                            Usuń
+                          </Button>
+                        </div>
+                      </Card>
+                    ))
+                  ) : (
+                    <div className="text-center py-8 col-span-full">
+                      <BookOpen className="h-12 w-12 text-slate-300 mx-auto mb-4" />
+                      <p className="text-slate-500">Brak podcastów w bibliotece</p>
+                    </div>
+                  )}
                 </div>
               </div>
 
