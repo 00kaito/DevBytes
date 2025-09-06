@@ -59,7 +59,8 @@ export const podcasts = pgTable("podcasts", {
   slug: varchar("slug", { length: 200 }).notNull().unique(),
   description: text("description"),
   duration: integer("duration"), // in minutes
-  price: integer("price").notNull(), // in cents (Polish grosze)
+  originalPrice: integer("original_price").notNull(), // original price in cents
+  price: integer("price").notNull(), // current/discounted price in cents
   categoryId: varchar("category_id").notNull().references(() => categories.id),
   audioObjectPath: varchar("audio_object_path"), // path to audio file in object storage
   imageObjectPath: varchar("image_object_path"), // path to podcast image in object storage
@@ -69,11 +70,47 @@ export const podcasts = pgTable("podcasts", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// User purchases
+// Podcast parts (for multi-part podcasts)
+export const podcastParts = pgTable("podcast_parts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  podcastId: varchar("podcast_id").notNull().references(() => podcasts.id, { onDelete: "cascade" }),
+  partNumber: integer("part_number").notNull(),
+  title: varchar("title", { length: 200 }).notNull(),
+  duration: integer("duration"), // in minutes
+  audioObjectPath: varchar("audio_object_path").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Podcast bundles (groups of podcasts)
+export const podcastBundles = pgTable("podcast_bundles", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: varchar("title", { length: 200 }).notNull(),
+  slug: varchar("slug", { length: 200 }).notNull().unique(),
+  description: text("description"),
+  originalPrice: integer("original_price").notNull(), // original price in cents
+  price: integer("price").notNull(), // current/discounted price in cents
+  imageObjectPath: varchar("image_object_path"),
+  status: varchar("status", { length: 20 }).notNull().default("draft"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Many-to-many relationship between bundles and podcasts
+export const bundlePodcasts = pgTable("bundle_podcasts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  bundleId: varchar("bundle_id").notNull().references(() => podcastBundles.id, { onDelete: "cascade" }),
+  podcastId: varchar("podcast_id").notNull().references(() => podcasts.id, { onDelete: "cascade" }),
+  orderIndex: integer("order_index").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// User purchases (for individual podcasts)
 export const purchases = pgTable("purchases", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id),
-  podcastId: varchar("podcast_id").notNull().references(() => podcasts.id),
+  podcastId: varchar("podcast_id").references(() => podcasts.id),
+  bundleId: varchar("bundle_id").references(() => podcastBundles.id),
   stripePaymentIntentId: varchar("stripe_payment_intent_id"),
   amount: integer("amount").notNull(), // amount paid in cents
   status: varchar("status", { length: 50 }).notNull().default("completed"),
@@ -100,6 +137,31 @@ export const podcastsRelations = relations(podcasts, ({ one, many }) => ({
   }),
   purchases: many(purchases),
   waitlistEntries: many(waitlist),
+  parts: many(podcastParts),
+  bundleAssociations: many(bundlePodcasts),
+}));
+
+export const podcastPartsRelations = relations(podcastParts, ({ one }) => ({
+  podcast: one(podcasts, {
+    fields: [podcastParts.podcastId],
+    references: [podcasts.id],
+  }),
+}));
+
+export const podcastBundlesRelations = relations(podcastBundles, ({ many }) => ({
+  bundlePodcasts: many(bundlePodcasts),
+  purchases: many(purchases),
+}));
+
+export const bundlePodcastsRelations = relations(bundlePodcasts, ({ one }) => ({
+  bundle: one(podcastBundles, {
+    fields: [bundlePodcasts.bundleId],
+    references: [podcastBundles.id],
+  }),
+  podcast: one(podcasts, {
+    fields: [bundlePodcasts.podcastId],
+    references: [podcasts.id],
+  }),
 }));
 
 export const usersRelations = relations(users, ({ many }) => ({
@@ -114,6 +176,10 @@ export const purchasesRelations = relations(purchases, ({ one }) => ({
   podcast: one(podcasts, {
     fields: [purchases.podcastId],
     references: [podcasts.id],
+  }),
+  bundle: one(podcastBundles, {
+    fields: [purchases.bundleId],
+    references: [podcastBundles.id],
   }),
 }));
 
@@ -157,6 +223,22 @@ export const insertPodcastSchema = createInsertSchema(podcasts).omit({
   updatedAt: true,
 });
 
+export const insertPodcastPartSchema = createInsertSchema(podcastParts).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertPodcastBundleSchema = createInsertSchema(podcastBundles).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertBundlePodcastSchema = createInsertSchema(bundlePodcasts).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const insertPurchaseSchema = createInsertSchema(purchases).omit({
   id: true,
   purchasedAt: true,
@@ -176,6 +258,12 @@ export type Category = typeof categories.$inferSelect;
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
 export type Podcast = typeof podcasts.$inferSelect;
 export type InsertPodcast = z.infer<typeof insertPodcastSchema>;
+export type PodcastPart = typeof podcastParts.$inferSelect;
+export type InsertPodcastPart = z.infer<typeof insertPodcastPartSchema>;
+export type PodcastBundle = typeof podcastBundles.$inferSelect;
+export type InsertPodcastBundle = z.infer<typeof insertPodcastBundleSchema>;
+export type BundlePodcast = typeof bundlePodcasts.$inferSelect;
+export type InsertBundlePodcast = z.infer<typeof insertBundlePodcastSchema>;
 export type Purchase = typeof purchases.$inferSelect;
 export type InsertPurchase = z.infer<typeof insertPurchaseSchema>;
 export type Waitlist = typeof waitlist.$inferSelect;
@@ -186,6 +274,21 @@ export type PodcastWithCategory = Podcast & {
   category: Category;
 };
 
+export type PodcastWithParts = Podcast & {
+  category: Category;
+  parts: PodcastPart[];
+};
+
+export type PodcastBundleWithPodcasts = PodcastBundle & {
+  bundlePodcasts: (BundlePodcast & {
+    podcast: PodcastWithCategory;
+  })[];
+};
+
 export type PurchaseWithPodcast = Purchase & {
   podcast: PodcastWithCategory;
+};
+
+export type PurchaseWithBundle = Purchase & {
+  bundle: PodcastBundleWithPodcasts;
 };
