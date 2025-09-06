@@ -64,6 +64,7 @@ export const podcasts = pgTable("podcasts", {
   categoryId: varchar("category_id").notNull().references(() => categories.id),
   audioObjectPath: varchar("audio_object_path"), // path to audio file in object storage
   imageObjectPath: varchar("image_object_path"), // path to podcast image in object storage
+  demoObjectPath: varchar("demo_object_path"), // path to demo audio file in object storage
   status: varchar("status", { length: 20 }).notNull().default("draft"), // draft, public, coming_soon
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
