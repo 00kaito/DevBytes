@@ -674,7 +674,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Serve the audio file using object storage
+      console.log(`[AUDIO DOWNLOAD] Attempting to download audio for podcast ${podcastId}, path: ${podcast.audioObjectPath}`);
       const objectStorageService = new ObjectStorageService();
+      
+      try {
+        const privateObjectDir = objectStorageService.getPrivateObjectDir();
+        console.log(`[AUDIO DOWNLOAD] Private object dir: ${privateObjectDir}`);
+      } catch (configError) {
+        console.error(`[AUDIO DOWNLOAD] Object storage configuration error:`, configError);
+        return res.status(500).json({ message: "Błąd konfiguracji storage" });
+      }
+      
       const objectFile = await objectStorageService.getObjectEntityFile(podcast.audioObjectPath);
       
       // Set audio-specific headers
@@ -683,11 +693,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         'Content-Type': 'audio/mpeg',
       });
       
+      console.log(`[AUDIO DOWNLOAD] Successfully found file, streaming to client`);
       objectStorageService.downloadObject(objectFile, res);
     } catch (error) {
-      console.error("Error downloading podcast audio:", error);
+      console.error(`[AUDIO DOWNLOAD] Error downloading podcast audio for ${podcastId}:`, {
+        error: error.message,
+        stack: error.stack,
+        audioPath: podcast?.audioObjectPath,
+        podcastId: podcastId
+      });
       if (error instanceof ObjectNotFoundError) {
-        return res.status(404).json({ message: "Plik audio nie został znaleziony" });
+        return res.status(404).json({ message: "Plik audio nie został znaleziony w storage" });
       }
       return res.status(500).json({ message: "Błąd podczas pobierania pliku audio" });
     }
