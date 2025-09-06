@@ -929,6 +929,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Demo audio files serving (public access)
+  app.get("/api/objects/:objectPath(*)", async (req, res) => {
+    const objectPath = req.params.objectPath;
+    const objectStorageService = new ObjectStorageService();
+    
+    try {
+      console.log(`[DEMO AUDIO] Serving demo file: ${objectPath}`);
+      const objectFile = await objectStorageService.getObjectEntityFile(objectPath);
+      
+      // Set audio-specific headers for demo files
+      res.set({
+        'Content-Type': 'audio/mpeg',
+        'Cache-Control': 'public, max-age=3600', // Cache for 1 hour
+        'Accept-Ranges': 'bytes'
+      });
+      
+      objectStorageService.downloadObject(objectFile, res);
+    } catch (error) {
+      console.error("Error serving demo audio:", error);
+      if (error instanceof ObjectNotFoundError) {
+        return res.status(404).json({ message: "Plik demo nie został znaleziony" });
+      }
+      return res.status(500).json({ message: "Błąd podczas odtwarzania demo" });
+    }
+  });
+
   // Protected audio file serving (admin access)
   app.get("/objects/:objectPath(*)", isAuthenticated, isAdmin, async (req: any, res) => {
     const objectStorageService = new ObjectStorageService();

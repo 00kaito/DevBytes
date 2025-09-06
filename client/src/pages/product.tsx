@@ -20,6 +20,7 @@ import {
   LogOut
 } from "lucide-react";
 import type { PodcastWithCategory } from "@shared/schema";
+import { DemoPlayer } from "@/components/DemoPlayer";
 
 export default function Product() {
   const { slug } = useParams<{ slug: string }>();
@@ -207,6 +208,17 @@ export default function Product() {
                 </div>
               </div>
             </div>
+
+            {/* Demo Player */}
+            {podcast.demoObjectPath && (
+              <Card className="p-6 mb-6">
+                <h2 className="text-xl font-semibold mb-4">Posłuchaj demo</h2>
+                <DemoPlayer
+                  demoUrl={`/api/objects/${podcast.demoObjectPath}`}
+                  title={podcast.title}
+                />
+              </Card>
+            )}
 
             {/* Description */}
             <Card className="p-6 mb-6">
