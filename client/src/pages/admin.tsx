@@ -335,16 +335,30 @@ export default function Admin() {
             <h1 className="text-3xl font-bold">Zarządzanie Podcastami</h1>
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
-                <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                <Button 
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                  onClick={() => {
+                    setEditingPodcast(null);
+                    form.reset({
+                      title: "",
+                      slug: "",
+                      description: "",
+                      duration: 30,
+                      price: 2900,
+                      categoryId: "",
+                      imageObjectPath: "",
+                      audioObjectPath: "",
+                      status: "draft",
+                    });
+                  }}
+                >
                   <Plus className="mr-2 h-4 w-4" />
                   Dodaj Podcast
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-2xl">
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>
-                    {editingPodcast ? "Edytuj Podcast" : "Dodaj Nowy Podcast"}
-                  </DialogTitle>
+                  <DialogTitle>Dodaj Nowy Podcast</DialogTitle>
                 </DialogHeader>
                 <Form {...form}>
                   <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -588,7 +602,7 @@ export default function Admin() {
                         type="submit"
                         disabled={createMutation.isPending || updateMutation.isPending}
                       >
-                        {editingPodcast ? "Zaktualizuj" : "Dodaj"}
+                        Dodaj
                       </Button>
                     </div>
                   </form>
@@ -618,7 +632,6 @@ export default function Admin() {
                         size="sm"
                         onClick={() => {
                           startEdit(podcast);
-                          setIsAddDialogOpen(true);
                         }}
                       >
                         <Edit className="h-4 w-4" />
@@ -653,7 +666,7 @@ export default function Admin() {
       {/* Edit Dialog */}
       {editingPodcast && (
         <Dialog open={true} onOpenChange={() => setEditingPodcast(null)}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Edytuj Podcast</DialogTitle>
             </DialogHeader>
