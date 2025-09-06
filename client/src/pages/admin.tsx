@@ -64,7 +64,7 @@ export default function Admin() {
   const queryClient = useQueryClient();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingPodcast, setEditingPodcast] = useState<Podcast | null>(null);
-  const [activeTab, setActiveTab] = useState<"podcasts" | "users">("podcasts");
+  const [activeTab, setActiveTab] = useState<"podcasts" | "users" | "bundles">("podcasts");
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isUserLibraryDialogOpen, setIsUserLibraryDialogOpen] = useState(false);
 
@@ -450,6 +450,17 @@ export default function Admin() {
                 >
                   <Settings className="w-4 h-4 inline mr-2" />
                   Zarządzanie Podcastami
+                </button>
+                <button
+                  onClick={() => setActiveTab("bundles")}
+                  className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                    activeTab === "bundles"
+                      ? "border-blue-500 text-blue-600"
+                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  }`}
+                >
+                  <BookOpen className="w-4 h-4 inline mr-2" />
+                  Zarządzanie Bundlami
                 </button>
                 <button
                   onClick={() => setActiveTab("users")}
@@ -976,6 +987,92 @@ export default function Admin() {
               <p className="text-slate-500 mb-6">Dodaj pierwszy podcast aby rozpocząć zarządzanie treścią</p>
             </div>
           )}
+            </>
+          )}
+
+          {/* Bundles Tab */}
+          {activeTab === "bundles" && (
+            <>
+              <div className="flex justify-between items-center mb-8">
+                <h1 className="text-3xl font-bold">Zarządzanie Bundlami</h1>
+                <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Utwórz Bundle
+                </Button>
+              </div>
+
+              {/* Bundle Creation Form */}
+              <Card className="p-6 mb-8">
+                <h2 className="text-xl font-semibold mb-4">Utwórz nowy bundle</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="bundle-name">Nazwa bundlu</Label>
+                      <Input 
+                        id="bundle-name" 
+                        placeholder="Np. Kolekcja Java Fundamentals"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="bundle-slug">Slug (URL)</Label>
+                      <Input 
+                        id="bundle-slug" 
+                        placeholder="java-fundamentals-bundle"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="bundle-description">Opis bundlu</Label>
+                      <Textarea 
+                        id="bundle-description" 
+                        rows={3}
+                        placeholder="Opis bundlu dla klientów..."
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="bundle-original-price">Cena oryginalna (grosze)</Label>
+                        <Input 
+                          id="bundle-original-price" 
+                          type="number"
+                          placeholder="10000"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="bundle-price">Cena bundlu (grosze)</Label>
+                        <Input 
+                          id="bundle-price" 
+                          type="number"
+                          placeholder="7500"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <Label>Wybierz podcasty do bundlu</Label>
+                    <div className="max-h-64 overflow-y-auto border rounded-lg p-4 space-y-2">
+                      {podcasts?.map((podcast) => (
+                        <div key={podcast.id} className="flex items-center space-x-2">
+                          <Checkbox id={`podcast-${podcast.id}`} />
+                          <Label htmlFor={`podcast-${podcast.id}`} className="flex-1 text-sm">
+                            {podcast.title} ({formatPrice(podcast.originalPrice || podcast.price)})
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                    <Button className="w-full bg-green-600 hover:bg-green-700 text-white">
+                      Utwórz Bundle
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+
+              {/* Existing Bundles List */}
+              <div className="text-center py-16">
+                <BookOpen className="h-16 w-16 text-slate-300 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-slate-600 mb-2">Brak bundli</h3>
+                <p className="text-slate-500 mb-6">Utwórz pierwszy bundle aby oferować pakiety podcastów</p>
+              </div>
             </>
           )}
 
