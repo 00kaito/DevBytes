@@ -53,8 +53,8 @@ export default function Library() {
   };
 
   const handleDownload = (podcastId: string, title: string) => {
-    // Create download URL for the podcast audio file
-    const downloadUrl = `/objects/uploads/${podcastId}`;
+    // Create download URL for the podcast audio file using the proper API endpoint
+    const downloadUrl = `/api/podcasts/${podcastId}/audio`;
     
     // Create a temporary link and trigger download
     const link = document.createElement('a');
