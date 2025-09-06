@@ -720,6 +720,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin get user purchases
+  app.get("/api/admin/users/:userId/purchases", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { userId } = req.params;
+      console.log(`[ADMIN] Fetching purchases for user ${userId}`);
+      
+      const purchases = await storage.getUserPurchases(userId);
+      console.log(`[ADMIN] Successfully fetched ${purchases.length} purchases for user ${userId}`);
+      res.json(purchases);
+    } catch (error: any) {
+      console.error("[ADMIN] Error fetching user purchases:", {
+        message: error.message,
+        stack: error.stack,
+        userId: req.params.userId,
+        adminUserId: (req as any).session?.userId,
+        timestamp: new Date().toISOString()
+      });
+      res.status(500).json({ 
+        message: "Failed to fetch user purchases",
+        error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+      });
+    }
+  });
+
   // Purchase routes
   app.post("/api/create-payment-intent", isAuthenticated, async (req: any, res) => {
     try {
