@@ -133,7 +133,7 @@ export class DatabaseStorage implements IStorage {
       const mappedResults = results.map(result => ({
         ...result.podcasts,
         category: result.categories!,
-        imageUrl: result.podcasts.imageObjectPath ? `/public-objects/${result.podcasts.imageObjectPath}` : null,
+        // imageUrl is not part of PodcastWithCategory type - removed
       }));
 
       console.log(`[DB] Successfully mapped ${mappedResults.length} podcasts`);
@@ -150,7 +150,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getPodcastBySlug(slug: string): Promise<PodcastWithCategory | null> {
+  async getPodcastBySlug(slug: string): Promise<PodcastWithCategory | undefined> {
     const result = await db
       .select()
       .from(podcasts)
@@ -161,12 +161,11 @@ export class DatabaseStorage implements IStorage {
       ))
       .limit(1);
 
-    if (result.length === 0) return null;
+    if (result.length === 0) return undefined;
 
     return {
       ...result[0].podcasts,
       category: result[0].categories!,
-      imageUrl: result[0].podcasts.imageObjectPath ? `/public-objects/${result[0].podcasts.imageObjectPath}` : null,
     };
   }
 

@@ -63,9 +63,6 @@ const generateJWT = (userId: string, userEmail?: string): string => {
     {
       expiresIn: JWT_CONFIG.expiresIn,
       algorithm: 'HS256'
-      // Biblioteka automatycznie doda:
-      // - iat (issued at) = aktualny czas w sekundach Unix timestamp
-      // - exp (expiration) = iat + 24h w sekundach Unix timestamp
     }
   );
 
@@ -583,26 +580,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Protected audio file serving
-  app.get("/objects/:objectPath(*)", isAuthenticated, async (req: any, res) => {
+  // Object upload endpoint for audio files
+  app.post("/api/objects/upload", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const objectStorageService = new ObjectStorageService();
+      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+      res.json({ uploadURL });
+    } catch (error) {
+      console.error("Error creating upload URL:", error);
+      res.status(500).json({ error: "Failed to create upload URL" });
+    }
+  });
+
+  // Normalize uploaded object path
+  app.put("/api/objects/normalize", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { uploadURL } = req.body;
+      if (!uploadURL) {
+        return res.status(400).json({ error: "uploadURL is required" });
+      }
+      
+      const objectStorageService = new ObjectStorageService();
+      const objectPath = objectStorageService.normalizeObjectEntityPath(uploadURL);
+      res.json({ objectPath });
+    } catch (error) {
+      console.error("Error normalizing object path:", error);
+      res.status(500).json({ error: "Failed to normalize object path" });
+    }
+  });
+
+  // Audio download endpoint for purchased podcasts
+  app.get("/api/podcasts/:podcastId/audio", isAuthenticated, async (req: any, res) => {
     const userId = req.session.userId;
+    const podcastId = req.params.podcastId;
+    
+    try {
+      // Check if user has purchased this podcast
+      const hasPurchased = await storage.checkUserPurchase(userId, podcastId);
+      if (!hasPurchased) {
+        return res.status(403).json({ message: "Musisz zakupić ten podcast, aby uzyskać dostęp do pliku audio" });
+      }
+      
+      // Get podcast details
+      const podcast = await storage.getPodcast(podcastId);
+      if (!podcast || !podcast.audioObjectPath) {
+        return res.status(404).json({ message: "Plik audio nie został znaleziony" });
+      }
+      
+      // Serve the audio file using object storage
+      const objectStorageService = new ObjectStorageService();
+      const objectFile = await objectStorageService.getObjectEntityFile(podcast.audioObjectPath);
+      
+      // Set audio-specific headers
+      res.set({
+        'Content-Disposition': `attachment; filename="${podcast.slug}.mp3"`,
+        'Content-Type': 'audio/mpeg',
+      });
+      
+      objectStorageService.downloadObject(objectFile, res);
+    } catch (error) {
+      console.error("Error downloading podcast audio:", error);
+      if (error instanceof ObjectNotFoundError) {
+        return res.status(404).json({ message: "Plik audio nie został znaleziony" });
+      }
+      return res.status(500).json({ message: "Błąd podczas pobierania pliku audio" });
+    }
+  });
+
+  // Protected audio file serving (admin access)
+  app.get("/objects/:objectPath(*)", isAuthenticated, isAdmin, async (req: any, res) => {
     const objectStorageService = new ObjectStorageService();
     
     try {
       const objectFile = await objectStorageService.getObjectEntityFile(req.path);
-      const canAccess = await objectStorageService.canAccessObjectEntity({
-        objectFile,
-        userId: userId,
-        requestedPermission: ObjectPermission.READ,
-      });
-      
-      if (!canAccess) {
-        return res.sendStatus(401);
-      }
-      
       objectStorageService.downloadObject(objectFile, res);
     } catch (error) {
-      console.error("Error checking object access:", error);
+      console.error("Error accessing object:", error);
       if (error instanceof ObjectNotFoundError) {
         return res.sendStatus(404);
       }

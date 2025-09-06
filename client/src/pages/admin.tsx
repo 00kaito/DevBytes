@@ -31,9 +31,10 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
-import { Plus, Edit, Trash2, ArrowLeft, LogOut, Settings } from "lucide-react";
+import { Plus, Edit, Trash2, ArrowLeft, LogOut, Settings, Upload } from "lucide-react";
 import type { Podcast, Category } from "@shared/schema";
 import SimpleEditor from "@/components/SimpleEditor";
+import { ObjectUploader } from "@/components/ObjectUploader";
 
 const podcastFormSchema = z.object({
   title: z.string().min(1, "Tytuł jest wymagany"),
@@ -43,6 +44,7 @@ const podcastFormSchema = z.object({
   price: z.number().min(1, "Cena musi być większa niż 0"),
   categoryId: z.string().min(1, "Kategoria jest wymagana"),
   imageObjectPath: z.string().optional(),
+  audioObjectPath: z.string().optional(),
   status: z.enum(["draft", "public", "coming_soon"]),
 });
 
@@ -120,6 +122,7 @@ export default function Admin() {
       price: 2900,
       categoryId: "",
       imageObjectPath: "",
+      audioObjectPath: "",
       status: "draft",
     },
   });
@@ -260,6 +263,7 @@ export default function Admin() {
       price: podcast.price,
       categoryId: podcast.categoryId,
       imageObjectPath: podcast.imageObjectPath || "",
+      audioObjectPath: podcast.audioObjectPath || "",
       status: (podcast.status as "draft" | "public" | "coming_soon") || "draft",
     });
     
@@ -469,6 +473,73 @@ export default function Admin() {
                               />
                               <p className="text-sm text-gray-500">
                                 Zostaw puste dla domyślnego tła lub wklej ścieżkę do pliku w Object Storage
+                              </p>
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="audioObjectPath"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Plik Audio</FormLabel>
+                          <FormControl>
+                            <div className="space-y-2">
+                              <Input
+                                placeholder="Ścieżka do pliku audio..."
+                                {...field}
+                              />
+                              <div className="flex gap-2">
+                                <ObjectUploader
+                                  maxNumberOfFiles={1}
+                                  maxFileSize={104857600} // 100MB for audio files
+                                  onGetUploadParameters={async () => {
+                                    const response = await apiRequest("POST", "/api/objects/upload");
+                                    const data = await response.json();
+                                    return {
+                                      method: "PUT" as const,
+                                      url: data.uploadURL,
+                                    };
+                                  }}
+                                  onComplete={async (result) => {
+                                    if (result.successful?.[0]?.uploadURL) {
+                                      const uploadUrl = result.successful[0].uploadURL;
+                                      try {
+                                        // Send the upload URL to backend to normalize the path
+                                        const response = await apiRequest("PUT", "/api/objects/normalize", { 
+                                          uploadURL: uploadUrl 
+                                        });
+                                        const data = await response.json();
+                                        // Set the normalized object path to the form field
+                                        field.onChange(data.objectPath);
+                                        toast({
+                                          title: "Sukces",
+                                          description: "Plik audio został przesłany pomyślnie",
+                                        });
+                                      } catch (error) {
+                                        console.error("Error normalizing path:", error);
+                                        // Fallback: use the upload URL directly
+                                        field.onChange(uploadUrl);
+                                        toast({
+                                          title: "Ostrzeżenie",
+                                          description: "Plik został przesłany, ale ścieżka może wymagać korekty",
+                                          variant: "destructive",
+                                        });
+                                      }
+                                    }
+                                  }}
+                                  buttonClassName="w-full"
+                                >
+                                  <Upload className="w-4 h-4 mr-2" />
+                                  Prześlij Audio
+                                </ObjectUploader>
+                              </div>
+                              <p className="text-sm text-gray-500">
+                                Prześlij plik audio (MP3, WAV, M4A) lub wklej ścieżkę do pliku w Object Storage
                               </p>
                             </div>
                           </FormControl>
@@ -713,6 +784,73 @@ export default function Admin() {
                           />
                           <p className="text-sm text-gray-500">
                             Zostaw puste dla domyślnego tła lub wklej ścieżkę do pliku w Object Storage
+                          </p>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="audioObjectPath"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Plik Audio</FormLabel>
+                      <FormControl>
+                        <div className="space-y-2">
+                          <Input
+                            placeholder="Ścieżka do pliku audio..."
+                            {...field}
+                          />
+                          <div className="flex gap-2">
+                            <ObjectUploader
+                              maxNumberOfFiles={1}
+                              maxFileSize={104857600} // 100MB for audio files
+                              onGetUploadParameters={async () => {
+                                const response = await apiRequest("POST", "/api/objects/upload");
+                                const data = await response.json();
+                                return {
+                                  method: "PUT" as const,
+                                  url: data.uploadURL,
+                                };
+                              }}
+                              onComplete={async (result) => {
+                                if (result.successful?.[0]?.uploadURL) {
+                                  const uploadUrl = result.successful[0].uploadURL;
+                                  try {
+                                    // Send the upload URL to backend to normalize the path
+                                    const response = await apiRequest("PUT", "/api/objects/normalize", { 
+                                      uploadURL: uploadUrl 
+                                    });
+                                    const data = await response.json();
+                                    // Set the normalized object path to the form field
+                                    field.onChange(data.objectPath);
+                                    toast({
+                                      title: "Sukces",
+                                      description: "Plik audio został przesłany pomyślnie",
+                                    });
+                                  } catch (error) {
+                                    console.error("Error normalizing path:", error);
+                                    // Fallback: use the upload URL directly
+                                    field.onChange(uploadUrl);
+                                    toast({
+                                      title: "Ostrzeżenie",
+                                      description: "Plik został przesłany, ale ścieżka może wymagać korekty",
+                                      variant: "destructive",
+                                    });
+                                  }
+                                }
+                              }}
+                              buttonClassName="w-full"
+                            >
+                              <Upload className="w-4 h-4 mr-2" />
+                              Prześlij Audio
+                            </ObjectUploader>
+                          </div>
+                          <p className="text-sm text-gray-500">
+                            Prześlij plik audio (MP3, WAV, M4A) lub wklej ścieżkę do pliku w Object Storage
                           </p>
                         </div>
                       </FormControl>
