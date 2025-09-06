@@ -331,6 +331,39 @@ export class DatabaseStorage implements IStorage {
       .limit(1);
     return result.length > 0;
   }
+
+  // Seed default admin user
+  async seedDefaultAdmin(): Promise<void> {
+    const adminEmail = "admin@admin.com";
+    const adminPassword = "admin@admin.com"; // Same as email as requested
+    
+    // Check if admin already exists
+    const existingAdmin = await this.getUserByEmail(adminEmail);
+    if (existingAdmin) {
+      console.log("[SEED] Default admin user already exists");
+      return;
+    }
+
+    try {
+      // Import bcrypt here to avoid circular dependencies
+      const bcrypt = await import('bcrypt');
+      const hashedPassword = await bcrypt.hash(adminPassword, 10);
+      
+      await this.createUser({
+        email: adminEmail,
+        password: hashedPassword,
+        firstName: "Admin",
+        lastName: "User",
+        isAdmin: true
+      });
+      
+      console.log("[SEED] Default admin user created successfully");
+      console.log("[SEED] Email: admin@admin.com");
+      console.log("[SEED] Password: admin@admin.com");
+    } catch (error) {
+      console.error("[SEED] Error creating default admin user:", error);
+    }
+  }
 }
 
 export const storage = new DatabaseStorage();
