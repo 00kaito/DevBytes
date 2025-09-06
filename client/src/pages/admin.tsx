@@ -67,6 +67,14 @@ export default function Admin() {
   const [activeTab, setActiveTab] = useState<"podcasts" | "users" | "bundles">("podcasts");
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isUserLibraryDialogOpen, setIsUserLibraryDialogOpen] = useState(false);
+  const [bundleForm, setBundleForm] = useState({
+    title: "",
+    slug: "",
+    description: "",
+    originalPrice: "",
+    price: "",
+    selectedPodcasts: [] as string[],
+  });
 
   // Redirect to home if not authenticated
   useEffect(() => {
@@ -319,8 +327,109 @@ export default function Admin() {
     },
   });
 
+  const createBundleMutation = useMutation({
+    mutationFn: async (bundleData: {
+      title: string;
+      slug: string;
+      description: string;
+      originalPrice: number;
+      price: number;
+      selectedPodcasts: string[];
+    }) => {
+      const response = await apiRequest("POST", "/api/admin/bundles", {
+        title: bundleData.title,
+        slug: bundleData.slug,
+        description: bundleData.description,
+        originalPrice: bundleData.originalPrice,
+        price: bundleData.price,
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Sukces",
+        description: "Bundle został utworzony pomyślnie",
+      });
+      // Reset form
+      setBundleForm({
+        title: "",
+        slug: "",
+        description: "",
+        originalPrice: "",
+        price: "",
+        selectedPodcasts: [],
+      });
+      // Refresh bundles list if we had a query for it
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/bundles"] });
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error as Error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Błąd",
+        description: "Nie udało się utworzyć bundla",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleLogout = () => {
     logoutMutation.mutate();
+  };
+
+  const handleCreateBundle = () => {
+    // Validate form
+    if (!bundleForm.title || !bundleForm.slug || !bundleForm.originalPrice || !bundleForm.price) {
+      toast({
+        title: "Błąd",
+        description: "Wszystkie pola są wymagane",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const originalPrice = parseInt(bundleForm.originalPrice);
+    const price = parseInt(bundleForm.price);
+
+    if (isNaN(originalPrice) || isNaN(price) || originalPrice <= 0 || price <= 0) {
+      toast({
+        title: "Błąd",
+        description: "Ceny muszą być liczbami większymi od 0",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    createBundleMutation.mutate({
+      title: bundleForm.title,
+      slug: bundleForm.slug,
+      description: bundleForm.description,
+      originalPrice,
+      price,
+      selectedPodcasts: bundleForm.selectedPodcasts,
+    });
+  };
+
+  const handleBundleFormChange = (field: string, value: string) => {
+    setBundleForm(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handlePodcastSelection = (podcastId: string, checked: boolean) => {
+    setBundleForm(prev => ({
+      ...prev,
+      selectedPodcasts: checked
+        ? [...prev.selectedPodcasts, podcastId]
+        : prev.selectedPodcasts.filter(id => id !== podcastId)
+    }));
   };
 
   const onSubmit = async (data: PodcastFormData) => {
@@ -1036,9 +1145,13 @@ export default function Admin() {
             <>
               <div className="flex justify-between items-center mb-8">
                 <h1 className="text-3xl font-bold">Zarządzanie Bundlami</h1>
-                <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                <Button 
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                  onClick={handleCreateBundle}
+                  disabled={createBundleMutation.isPending}
+                >
                   <Plus className="mr-2 h-4 w-4" />
-                  Utwórz Bundle
+                  {createBundleMutation.isPending ? "Tworzenie..." : "Utwórz Bundle"}
                 </Button>
               </div>
 
@@ -1052,6 +1165,8 @@ export default function Admin() {
                       <Input 
                         id="bundle-name" 
                         placeholder="Np. Kolekcja Java Fundamentals"
+                        value={bundleForm.title}
+                        onChange={(e) => handleBundleFormChange('title', e.target.value)}
                       />
                     </div>
                     <div>
@@ -1059,6 +1174,8 @@ export default function Admin() {
                       <Input 
                         id="bundle-slug" 
                         placeholder="java-fundamentals-bundle"
+                        value={bundleForm.slug}
+                        onChange={(e) => handleBundleFormChange('slug', e.target.value)}
                       />
                     </div>
                     <div>
@@ -1067,6 +1184,8 @@ export default function Admin() {
                         id="bundle-description" 
                         rows={3}
                         placeholder="Opis bundlu dla klientów..."
+                        value={bundleForm.description}
+                        onChange={(e) => handleBundleFormChange('description', e.target.value)}
                       />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
@@ -1076,6 +1195,8 @@ export default function Admin() {
                           id="bundle-original-price" 
                           type="number"
                           placeholder="10000"
+                          value={bundleForm.originalPrice}
+                          onChange={(e) => handleBundleFormChange('originalPrice', e.target.value)}
                         />
                       </div>
                       <div>
@@ -1084,6 +1205,8 @@ export default function Admin() {
                           id="bundle-price" 
                           type="number"
                           placeholder="7500"
+                          value={bundleForm.price}
+                          onChange={(e) => handleBundleFormChange('price', e.target.value)}
                         />
                       </div>
                     </div>
@@ -1094,15 +1217,25 @@ export default function Admin() {
                     <div className="max-h-64 overflow-y-auto border rounded-lg p-4 space-y-2">
                       {podcasts?.map((podcast) => (
                         <div key={podcast.id} className="flex items-center space-x-2">
-                          <Checkbox id={`podcast-${podcast.id}`} />
+                          <Checkbox 
+                            id={`podcast-${podcast.id}`}
+                            checked={bundleForm.selectedPodcasts.includes(podcast.id)}
+                            onCheckedChange={(checked) => 
+                              handlePodcastSelection(podcast.id, checked as boolean)
+                            }
+                          />
                           <Label htmlFor={`podcast-${podcast.id}`} className="flex-1 text-sm">
                             {podcast.title} ({formatPrice(podcast.originalPrice || podcast.price)})
                           </Label>
                         </div>
                       ))}
                     </div>
-                    <Button className="w-full bg-green-600 hover:bg-green-700 text-white">
-                      Utwórz Bundle
+                    <Button 
+                      className="w-full bg-green-600 hover:bg-green-700 text-white"
+                      onClick={handleCreateBundle}
+                      disabled={createBundleMutation.isPending}
+                    >
+                      {createBundleMutation.isPending ? "Tworzenie..." : "Utwórz Bundle"}
                     </Button>
                   </div>
                 </div>
