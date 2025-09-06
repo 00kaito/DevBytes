@@ -278,6 +278,39 @@ export default function Admin() {
     },
   });
 
+  const removePodcastFromLibraryMutation = useMutation({
+    mutationFn: async ({ userId, podcastId }: { userId: string; podcastId: string }) => {
+      const response = await apiRequest("DELETE", `/api/admin/users/${userId}/remove-podcast/${podcastId}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Sukces",
+        description: "Podcast został usunięty z biblioteki użytkownika",
+      });
+      // Refresh user purchases if needed
+      queryClient.invalidateQueries({ queryKey: ["/api/user/purchases"] });
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error as Error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Błąd",
+        description: "Nie udało się usunąć podcastu z biblioteki",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleLogout = () => {
     logoutMutation.mutate();
   };
@@ -1395,51 +1428,73 @@ export default function Admin() {
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
-                Dodaj podcast do biblioteki: {selectedUser.firstName} {selectedUser.lastName}
+                Zarządzaj biblioteką: {selectedUser.firstName} {selectedUser.lastName}
               </DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
+            <div className="space-y-6">
               <p className="text-slate-600">
-                Wybierz podcast, który chcesz dodać do biblioteki użytkownika {selectedUser.email}
+                Zarządzaj biblioteką użytkownika {selectedUser.email}
               </p>
               
-              {podcasts && podcasts.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-96 overflow-y-auto">
-                  {podcasts.map((podcast) => (
-                    <Card key={podcast.id} className="p-4 border border-slate-200 hover:border-blue-300 transition-colors">
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <h4 className="font-semibold mb-2">{podcast.title}</h4>
-                          <p className="text-sm text-slate-600 mb-3 line-clamp-2">{podcast.description}</p>
-                          <div className="flex space-x-4 text-xs text-slate-500">
-                            <span>Czas: {podcast.duration} min</span>
-                            <span>Cena: {formatPrice(podcast.price)}</span>
-                            <span>Stan: {podcast.status}</span>
+              {/* Owned Podcasts Section */}
+              <div>
+                <h3 className="text-lg font-semibold mb-3 flex items-center">
+                  <BookOpen className="h-5 w-5 mr-2 text-green-600" />
+                  Posiadane podcasty
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-48 overflow-y-auto border-2 border-green-100 rounded-lg p-4">
+                  {/* TODO: Show owned podcasts here */}
+                  <div className="text-center py-8 col-span-full">
+                    <BookOpen className="h-12 w-12 text-slate-300 mx-auto mb-4" />
+                    <p className="text-slate-500">Brak podcastów w bibliotece</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Available Podcasts Section */}
+              <div>
+                <h3 className="text-lg font-semibold mb-3 flex items-center">
+                  <Plus className="h-5 w-5 mr-2 text-blue-600" />
+                  Dostępne podcasty do dodania
+                </h3>
+                {podcasts && podcasts.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-64 overflow-y-auto border-2 border-blue-100 rounded-lg p-4">
+                    {podcasts.map((podcast) => (
+                      <Card key={podcast.id} className="p-4 border border-slate-200 hover:border-blue-300 transition-colors">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <h4 className="font-semibold mb-2">{podcast.title}</h4>
+                            <p className="text-sm text-slate-600 mb-3 line-clamp-2">{podcast.description}</p>
+                            <div className="flex space-x-4 text-xs text-slate-500">
+                              <span>Czas: {podcast.duration} min</span>
+                              <span>Cena: {formatPrice(podcast.price)}</span>
+                              <span>Stan: {podcast.status}</span>
+                            </div>
                           </div>
+                          <Button
+                            size="sm"
+                            onClick={() => {
+                              addPodcastToLibraryMutation.mutate({
+                                userId: selectedUser.id,
+                                podcastId: podcast.id,
+                              });
+                            }}
+                            disabled={addPodcastToLibraryMutation.isPending}
+                          >
+                            <Plus className="h-4 w-4 mr-1" />
+                            Dodaj
+                          </Button>
                         </div>
-                        <Button
-                          size="sm"
-                          onClick={() => {
-                            addPodcastToLibraryMutation.mutate({
-                              userId: selectedUser.id,
-                              podcastId: podcast.id,
-                            });
-                          }}
-                          disabled={addPodcastToLibraryMutation.isPending}
-                        >
-                          <Plus className="h-4 w-4 mr-1" />
-                          Dodaj
-                        </Button>
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <Settings className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-                  <p className="text-slate-500">Brak dostępnych podcastów</p>
-                </div>
-              )}
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 border-2 border-blue-100 rounded-lg">
+                    <Settings className="h-12 w-12 text-slate-300 mx-auto mb-4" />
+                    <p className="text-slate-500">Brak dostępnych podcastów</p>
+                  </div>
+                )}
+              </div>
               
               <div className="flex justify-end space-x-4 pt-4 border-t">
                 <Button
